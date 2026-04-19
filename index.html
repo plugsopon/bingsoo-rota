@@ -17,8 +17,9 @@
   .topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .nav-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25);
     border-radius: 8px; padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
-    text-decoration: none; transition: background 0.2s; white-space: nowrap; }
+    text-decoration: none; transition: background 0.2s; white-space: nowrap; cursor: pointer; }
   .nav-btn:hover { background: rgba(255,255,255,0.25); }
+  .nav-btn.active { background: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.6); }
   .user-name { font-size: 0.85rem; opacity: 0.85; font-weight: 600; }
   .signout-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);
     border-radius: 8px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; }
@@ -63,9 +64,10 @@
       <div class="sub">📁 3 weeks available</div>
     </div>
     <div class="topbar-right">
-      <a href="portal/availability.html" class="nav-btn">📅 My Availability</a>
-      <a href="portal/schedule.html" class="nav-btn">🗓 My Schedule</a>
-      <a href="portal/manager.html" class="nav-btn" id="all-staff-btn" style="display:none">👥 All Staff</a>
+      <span class="nav-btn" onclick="showRota()">📊 ROTA</span>
+      <span class="nav-btn" onclick="loadPage('portal/availability.html',this)">📅 My Availability</span>
+      <span class="nav-btn" onclick="loadPage('portal/schedule.html',this)">🗓 My Schedule</span>
+      <span class="nav-btn" id="all-staff-btn" style="display:none" onclick="loadPage('portal/manager.html',this)">👥 All Staff</span>
       <span class="user-name" id="user-name"></span>
       <button class="signout-btn" onclick="signOut()">Sign Out</button>
     </div>
@@ -74,9 +76,9 @@
     <nav class="sidebar">
       <div class="sidebar-header">Weekly ROTA</div>
       <ul id="week-list">
-        <li class="active" onclick="loadWeek('output/rota_20042026_26042026.html', this)"><span class="wnum">W17</span><span class="wlabel">20 Apr - 26 Apr</span></li>
-<li class="" onclick="loadWeek('output/rota_19042026_25042026.html', this)"><span class="wnum">W16</span><span class="wlabel">19 Apr - 25 Apr</span></li>
-<li class="" onclick="loadWeek('output/rota_13042026_19042026.html', this)"><span class="wnum">W16</span><span class="wlabel">13 Apr - 19 Apr</span></li>
+        <li class="active" data-file="rota_20042026_26042026.html" onclick="loadWeek('output/rota_20042026_26042026.html','rota_20042026_26042026.html',this)"><span class="wnum">W17</span><span class="wlabel">20 Apr - 26 Apr</span></li>
+<li class="" data-file="rota_19042026_25042026.html" onclick="loadWeek('output/rota_19042026_25042026.html','rota_19042026_25042026.html',this)"><span class="wnum">W16</span><span class="wlabel">19 Apr - 25 Apr</span></li>
+<li class="" data-file="rota_13042026_19042026.html" onclick="loadWeek('output/rota_13042026_19042026.html','rota_13042026_19042026.html',this)"><span class="wnum">W16</span><span class="wlabel">13 Apr - 19 Apr</span></li>
 
       </ul>
     </nav>
@@ -96,7 +98,32 @@ const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function loadWeek(path, el) {
+function setNavActive(el) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function loadPage(url, el) {
+  document.querySelector('.sidebar').style.display = 'none';
+  document.querySelector('.toolbar').style.display = 'none';
+  document.getElementById('rota-frame').src = url;
+  setNavActive(el);
+}
+
+function showRota() {
+  document.querySelector('.sidebar').style.display = 'flex';
+  document.querySelector('.toolbar').style.display = 'flex';
+  const firstActive = document.querySelector('#week-list li.active');
+  if (firstActive) {
+    const path = 'output/' + firstActive.getAttribute('data-file');
+    document.getElementById('rota-frame').src = path;
+  }
+  setNavActive(document.querySelector('.nav-btn'));
+}
+
+function loadWeek(path, file, el) {
+  document.querySelector('.sidebar').style.display = 'flex';
+  document.querySelector('.toolbar').style.display = 'flex';
   document.getElementById('rota-frame').src = path;
   const lbl = el.querySelector('.wlabel').textContent;
   const wn  = el.querySelector('.wnum').textContent;
@@ -105,6 +132,7 @@ function loadWeek(path, el) {
   document.getElementById('csv-btn').href  = path.replace('.html', '.csv');
   document.querySelectorAll('#week-list li').forEach(li => li.classList.remove('active'));
   el.classList.add('active');
+  setNavActive(null);
 }
 
 async function signOut() {

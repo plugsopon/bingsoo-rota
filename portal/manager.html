@@ -306,6 +306,13 @@ async function init() {
   if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
 
   document.getElementById('topbar-name').textContent = staff.name;
+
+  // Hide own chrome when embedded in the main dashboard iframe
+  if (window.self !== window.top) {
+    document.querySelector('.topbar').style.display = 'none';
+    document.querySelector('.nav-links').style.display = 'none';
+  }
+
   populateWeeks();
   await loadData();
 }
