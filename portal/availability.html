@@ -192,6 +192,7 @@
   <div class="nav-links">
     <a href="availability.html" class="nav-link active">📅 My Availability</a>
     <a href="schedule.html" class="nav-link">🗓 My Schedule</a>
+    <a href="manager.html" class="nav-link" id="manager-link" style="display:none">👥 All Staff</a>
   </div>
 
   <p class="greeting" id="greeting">Hi there!</p>
@@ -375,6 +376,7 @@ async function init() {
   const staff = profileArr?.[0];
   document.getElementById('topbar-name').textContent = staff?.name || session.user.email;
   document.getElementById('greeting').textContent = `Hi ${staff?.name || 'there'}! 👋`;
+  if (staff?.is_manager) document.getElementById('manager-link').style.display = 'inline-flex';
 
   populateWeeks();
   await loadExisting();

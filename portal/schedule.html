@@ -136,6 +136,7 @@
   <div class="nav-links">
     <a href="availability.html" class="nav-link">📅 My Availability</a>
     <a href="schedule.html" class="nav-link active">🗓 My Schedule</a>
+    <a href="manager.html" class="nav-link" id="manager-link" style="display:none">👥 All Staff</a>
   </div>
 
   <div class="week-selector">
@@ -294,6 +295,7 @@ async function init() {
   const staff = profileArr?.[0];
   document.getElementById('topbar-name').textContent = staff?.name || session.user.email;
   if (staff?.contract_hours) contractHours = staff.contract_hours;
+  if (staff?.is_manager) document.getElementById('manager-link').style.display = 'inline-flex';
 
   populateWeeks();
   await loadSchedule();
