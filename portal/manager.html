@@ -9,7 +9,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100vh; }
   .topbar {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     padding: 16px 24px;
     display: flex;
@@ -122,6 +122,13 @@
   .slot-Off { background: #f3f4f6; color: #6b7280; }
   .slot-none { color: #d1d5db; font-style: italic; font-size: 11px; }
   .day-header-weekend { color: #f59e0b; }
+  .nav-links { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .nav-link {
+    background: white; color: #667eea; border: 2px solid #667eea;
+    border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .nav-link:hover, .nav-link.active { background: #667eea; color: white; }
   .loading { text-align: center; padding: 40px; color: #888; font-size: 15px; }
   .section-title {
     font-size: 13px;
@@ -150,10 +157,11 @@
 </div>
 
 <div class="container">
-  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-    <a href="manager.html" style="background:#1a1a2e;color:white;border:2px solid #1a1a2e;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;text-decoration:none;">👥 All Staff</a>
-    <a href="availability.html" style="background:white;color:#667eea;border:2px solid #667eea;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;text-decoration:none;">📅 My Availability</a>
-    <a href="schedule.html" style="background:white;color:#667eea;border:2px solid #667eea;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:600;text-decoration:none;">🗓 My Schedule</a>
+  <div class="nav-links">
+    <a href="../index.html" class="nav-link">📊 Rota Dashboard</a>
+    <a href="availability.html" class="nav-link">📅 My Availability</a>
+    <a href="schedule.html" class="nav-link">🗓 My Schedule</a>
+    <a href="manager.html" class="nav-link active">👥 All Staff</a>
   </div>
   <div class="toolbar">
     <label>Week:</label>
