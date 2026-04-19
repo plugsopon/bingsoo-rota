@@ -1,0 +1,17 @@
+﻿,Role,13/04/2026,,,,,14/04/2026,,,,,15/04/2026,,,,,16/04/2026,,,,,17/04/2026,,,,,18/04/2026,,,,,19/04/2026,,,,,Weekly Hours
+Staff,,Monday,,,,,Tuesday,,,,,Wednesday,,,,,Thursday,,,,,Friday,,,,,Saturday,,,,,Sunday,,,,,
+,,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,
+Demand,,LOW (~£1095),,,,,LOW (~£1061),,,,,LOW (~£1181),,,,,LOW (~£956),,,,,MEDIUM (~£1473),,,,,HIGH (~£3030),,,,,HIGH (~£2148),,,,,
+Weather,,Rain:0.5mm | 12.5°C,,,,,Rain:0mm | 16.6°C,,,,,Rain:0.2mm | 16.7°C,,,,,Rain:1.4mm | 17.4°C,,,,,Rain:0mm | 17.6°C,,,,,Rain:0.3mm | 17.0°C,,,,,Rain:0mm | 15.5°C,,,,,
+
+Daeun,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,7.0h
+Dongjune,SV,07:00,21:30,1.0h,14:15,15:15,07:00,21:30,1.0h,14:15,15:15,07:00,20:00,1.0h,13:30,14:30,07:00,08:00,-,-,-,OFF,,,,,OFF,,,,,OFF,,,,,40.0h
+Haeun,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,07:00,21:30,1.0h,14:15,15:15,OFF,,,,,OFF,,,,,13.5h
+Jin,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,14:00,21:30,0.5h,17:45,18:15,07:00,14:00,0.5h,10:30,11:00,20.5h
+KaYan,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,14.0h
+Linna,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,14:00,21:30,0.5h,17:45,18:15,14.0h
+Riwon,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,07:00,21:30,1.0h,14:15,15:15,13.5h
+Som,CM,07:00,21:30,1.0h,14:15,15:15,07:00,21:30,1.0h,14:15,15:15,07:00,20:00,1.0h,13:30,14:30,07:00,08:00,-,-,-,OFF,,,,,OFF,,,,,OFF,,,,,40.0h
+Yujin,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,07:00,21:30,1.0h,14:15,15:15,OFF,,,,,13.5h
+
+Daily Hours,,27.0h,,,,,27.0h,,,,,24.0h,,,,,2.0h,,,,,27.5h,,,,,34.5h,,,,,34.0h,,,,,176.0h

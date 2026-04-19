@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingsoo - ROTA Dashboard</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F2F5; }
+.topbar { background: linear-gradient(135deg,#2C3E50,#4A6FA5); color: white; padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+.topbar h1 { font-size: 1.3rem; font-weight: 700; }
+.topbar .sub { font-size: 0.8rem; opacity: 0.7; margin-top: 2px; }
+.topbar .badge { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 6px 14px; font-size: 0.82rem; }
+.layout { display: flex; height: calc(100vh - 56px); overflow: hidden; }
+.sidebar { width: 220px; background: #1E2A38; color: white; display: flex;
+  flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+.sidebar-header { padding: 16px; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.4);
+  border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sidebar ul { list-style: none; padding: 8px 0; }
+.sidebar ul li { display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+  cursor: pointer; border-left: 3px solid transparent; font-size: 0.85rem; }
+.sidebar ul li:hover { background: rgba(255,255,255,0.07); }
+.sidebar ul li.active { background: rgba(74,144,217,0.2); border-left-color: #4A90D9; }
+.wnum { background: rgba(255,255,255,0.1); border-radius: 5px; padding: 2px 7px;
+  font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
+.sidebar ul li.active .wnum { background: #4A90D9; color: white; }
+.wlabel { font-size: 0.78rem; color: rgba(255,255,255,0.7); }
+.sidebar ul li.active .wlabel { color: #8EC8F8; }
+.preview-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.toolbar { background: white; border-bottom: 1px solid #E0E0E0; padding: 8px 16px;
+  display: flex; align-items: center; gap: 12px; }
+#week-title { font-weight: 600; font-size: 0.9rem; color: #2C3E50; flex: 1; }
+.btn { background: #4A6FA5; color: white; border: none; border-radius: 7px;
+  padding: 6px 14px; font-size: 0.8rem; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 5px; }
+.btn:hover { background: #3A5F95; }
+.btn-out { background: transparent; color: #4A6FA5; border: 1px solid #4A6FA5; }
+.btn-out:hover { background: #EBF5FB; }
+iframe { flex: 1; border: none; width: 100%; height: 100%; }
+.empty { flex: 1; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px; color: #95A5A6; padding: 40px; text-align: center; }
+
+/* LOGIN */
+#login-screen { display: flex; position: fixed; inset: 0;
+  background: linear-gradient(135deg,#2C3E50,#4A6FA5);
+  align-items: center; justify-content: center; z-index: 9999; }
+.login-box { background: white; border-radius: 20px; padding: 48px 40px; width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+.login-box .emoji { font-size: 3rem; margin-bottom: 12px; }
+.login-box h2 { font-size: 1.4rem; color: #2C3E50; margin-bottom: 6px; }
+.login-box p { color: #7F8C8D; font-size: 0.88rem; margin-bottom: 28px; }
+.login-box input { width: 100%; padding: 12px 16px; font-size: 1rem;
+  border: 2px solid #E0E0E0; border-radius: 10px; outline: none; margin-bottom: 12px; }
+.login-box input:focus { border-color: #4A6FA5; }
+#login-error { display: none; color: #E74C3C; font-size: 0.82rem; margin-bottom: 10px; }
+.login-box button { width: 100%; padding: 12px; font-size: 1rem; font-weight: 600;
+  background: linear-gradient(135deg,#2C3E50,#4A6FA5);
+  color: white; border: none; border-radius: 10px; cursor: pointer; }
+#app { display: none; flex-direction: column; height: 100vh; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="emoji">🧁</div>
+    <h2>Bingsoo Cafe</h2>
+    <p>Enter password to view Staff ROTA</p>
+    <input id="pass-input" type="password" placeholder="Password">
+    <div id="login-error">Incorrect password. Please try again.</div>
+    <button onclick="tryLogin()">Login</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div>
+      <h1>🧁 Bingsoo Cafe - ROTA Dashboard</h1>
+      <div class="sub">Select a week from the sidebar to preview</div>
+    </div>
+    <div class="badge">📁 2 weeks available</div>
+  </div>
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="sidebar-header">Weekly ROTA</div>
+      <ul id="week-list">
+        <li class="active" onclick="loadWeek('output/rota_20042026_26042026.html', this)"><span class="wnum">W17</span><span class="wlabel">20 Apr - 26 Apr</span></li>
+<li class="" onclick="loadWeek('output/rota_13042026_19042026.html', this)"><span class="wnum">W16</span><span class="wlabel">13 Apr - 19 Apr</span></li>
+
+      </ul>
+    </nav>
+    <div class="preview-area">
+      <div class="toolbar">
+        <span id="week-title">Week 17 · 20 Apr - 26 Apr 2026</span>
+        <a id="open-btn" class="btn" href="output/rota_20042026_26042026.html" target="_blank">Open in new tab</a>
+        <a id="csv-btn" class="btn btn-out" href="output/rota_20042026_26042026.csv" download>Download CSV</a>
+      </div>
+      <iframe id="rota-frame" src="output/rota_20042026_26042026.html"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+  function loadWeek(path, el) {
+    document.getElementById('rota-frame').src = path;
+    const lbl = el.querySelector('.wlabel').textContent;
+    const wn  = el.querySelector('.wnum').textContent;
+    document.getElementById('week-title').textContent = wn + ' · ' + lbl;
+    document.getElementById('open-btn').href = path;
+    document.getElementById('csv-btn').href  = path.replace('.html', '.csv');
+    document.querySelectorAll('#week-list li').forEach(li => li.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  const PASS = '0';
+  const KEY  = 'rota_auth';
+
+  function checkAuth() {
+    if (sessionStorage.getItem(KEY) === '1') { showApp(); }
+    else {
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+      setTimeout(() => document.getElementById('pass-input').focus(), 100);
+    }
+  }
+
+  function tryLogin() {
+    if (document.getElementById('pass-input').value === PASS) {
+      sessionStorage.setItem(KEY, '1'); showApp();
+    } else {
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('pass-input').value = '';
+      document.getElementById('pass-input').focus();
+      setTimeout(() => document.getElementById('login-error').style.display = 'none', 2500);
+    }
+  }
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+  }
+
+  document.addEventListener('DOMContentLoaded', checkAuth);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none')
+      tryLogin();
+  });
+</script>
+</body>
+</html>
