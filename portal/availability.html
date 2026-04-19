@@ -371,7 +371,8 @@ async function init() {
   if (!session) { window.location.href = 'login.html'; return; }
 
   staffId = session.user.id;
-  const { data: staff } = await sb.from('staff').select('name, is_manager').single();
+  const { data: profileArr } = await sb.rpc('get_my_profile');
+  const staff = profileArr?.[0];
   document.getElementById('topbar-name').textContent = staff?.name || session.user.email;
   document.getElementById('greeting').textContent = `Hi ${staff?.name || 'there'}! 👋`;
 

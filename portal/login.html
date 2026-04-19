@@ -123,15 +123,13 @@ async function login() {
     return;
   }
 
-  await redirect(data.user.id);
+  await redirect();
 }
 
-async function redirect(userId) {
-  const { data: staff } = await sb.from('staff')
-    .select('is_manager')
-    .eq('id', userId)
-    .maybeSingle();
-  window.location.href = staff?.is_manager ? 'manager.html' : 'availability.html';
+async function redirect() {
+  const { data } = await sb.rpc('get_my_profile');
+  const profile = data?.[0];
+  window.location.href = profile?.is_manager ? 'manager.html' : 'availability.html';
 }
 
 document.getElementById('password').addEventListener('keydown', e => {
@@ -140,7 +138,7 @@ document.getElementById('password').addEventListener('keydown', e => {
 
 // Auto-redirect if already logged in
 sb.auth.getSession().then(({ data }) => {
-  if (data.session) redirect(data.session.user.id);
+  if (data.session) redirect();
 });
 </script>
 </body>

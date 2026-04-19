@@ -288,7 +288,8 @@ async function init() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return; }
 
-  const { data: staff } = await sb.from('staff').select('name, is_manager').single();
+  const { data: profileArr } = await sb.rpc('get_my_profile');
+  const staff = profileArr?.[0];
   if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
 
   document.getElementById('topbar-name').textContent = staff.name;
