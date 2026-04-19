@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Schedule — Bingsoo Staff</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100vh; }
+  .topbar {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 12px rgba(102,126,234,0.4);
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar span { font-size: 13px; opacity: 0.85; }
+  .logout-btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.3); }
+  .container { max-width: 700px; margin: 32px auto; padding: 0 20px; }
+  .nav-links { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .nav-link {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .nav-link:hover, .nav-link.active { background: #667eea; color: white; }
+  .week-selector {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .week-selector label { font-weight: 600; color: #444; font-size: 14px; }
+  .week-selector select {
+    padding: 8px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+    min-width: 200px;
+  }
+  .week-selector select:focus { border-color: #667eea; }
+  .shift-card {
+    background: white;
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-left: 5px solid #667eea;
+  }
+  .shift-card.off { border-left-color: #e5e7eb; opacity: 0.6; }
+  .shift-card.weekend { border-left-color: #f59e0b; }
+  .day-info { flex: 1; }
+  .day-name { font-weight: 700; font-size: 16px; color: #1a1a2e; }
+  .day-date { font-size: 12px; color: #888; margin-top: 2px; }
+  .shift-info { text-align: right; }
+  .shift-time { font-size: 17px; font-weight: 700; color: #667eea; }
+  .shift-hours { font-size: 12px; color: #888; margin-top: 2px; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .badge-morning { background: #dbeafe; color: #1d4ed8; }
+  .badge-afternoon { background: #fef3c7; color: #92400e; }
+  .badge-full { background: #d1fae5; color: #065f46; }
+  .badge-off { background: #f3f4f6; color: #6b7280; }
+  .summary-card {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(102,126,234,0.3);
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .summary-item { flex: 1; min-width: 100px; }
+  .summary-num { font-size: 28px; font-weight: 700; }
+  .summary-label { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+  .no-rota {
+    background: white;
+    border-radius: 14px;
+    padding: 40px;
+    text-align: center;
+    color: #888;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .no-rota .big { font-size: 40px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <h1>🍧 Bingsoo Staff Portal</h1>
+    <span id="topbar-name">Loading...</span>
+  </div>
+  <button class="logout-btn" onclick="logout()">Sign Out</button>
+</div>
+
+<div class="container">
+  <div class="nav-links">
+    <a href="availability.html" class="nav-link">📅 My Availability</a>
+    <a href="schedule.html" class="nav-link active">🗓 My Schedule</a>
+  </div>
+
+  <div class="week-selector">
+    <label>Week:</label>
+    <select id="week-select" onchange="loadSchedule()"></select>
+  </div>
+
+  <div id="summary" style="display:none" class="summary-card">
+    <div class="summary-item">
+      <div class="summary-num" id="s-days">0</div>
+      <div class="summary-label">Days working</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-num" id="s-hours">0h</div>
+      <div class="summary-label">Scheduled hours</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-num" id="s-contract">0h</div>
+      <div class="summary-label">Contract hours</div>
+    </div>
+  </div>
+
+  <div id="schedule-container"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+let staffId = null;
+let contractHours = 40;
+
+function formatDate(d) { return d.toISOString().split('T')[0]; }
+function formatDisplay(d) {
+  return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+}
+
+function getWeeks(n = 8) {
+  const weeks = [];
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  // Start from 2 weeks ago
+  const day = d.getDay();
+  const toMonday = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + toMonday - 14);
+  for (let i = 0; i < n; i++) {
+    weeks.push(new Date(d));
+    d.setDate(d.getDate() + 7);
+  }
+  return weeks;
+}
+
+function populateWeeks() {
+  const sel = document.getElementById('week-select');
+  const weeks = getWeeks(10);
+  // Current week index ~2
+  weeks.forEach((m, i) => {
+    const sunday = new Date(m); sunday.setDate(sunday.getDate() + 6);
+    const opt = document.createElement('option');
+    opt.value = formatDate(m);
+    opt.textContent = `${formatDisplay(m)} – ${formatDisplay(sunday)}`;
+    if (i === 2) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadSchedule() {
+  const weekStart = document.getElementById('week-select').value;
+  const d = new Date(weekStart + 'T00:00:00');
+  const weekEnd = formatDate(new Date(d.getTime() + 6*86400000));
+  const container = document.getElementById('schedule-container');
+  container.innerHTML = '';
+
+  // Try to load from rota_shifts table (future), or availability as fallback
+  // For now show availability with shift time estimates
+  const { data: avail } = await sb.from('availability')
+    .select('day, slot')
+    .eq('staff_id', staffId)
+    .gte('day', weekStart)
+    .lte('day', weekEnd);
+
+  if (!avail || avail.length === 0) {
+    container.innerHTML = `<div class="no-rota">
+      <div class="big">📋</div>
+      <div>No schedule found for this week.</div>
+      <div style="margin-top:8px;font-size:13px">Submit your availability first, then the manager will generate the ROTA.</div>
+    </div>`;
+    document.getElementById('summary').style.display = 'none';
+    return;
+  }
+
+  const availMap = {};
+  avail.forEach(a => { availMap[a.day] = a.slot; });
+
+  let workDays = 0;
+  let totalHours = 0;
+
+  const slotTimes = {
+    'Morning': { time: '07:00 – 13:00', hours: 6 },
+    'Afternoon': { time: '13:00 – 21:30', hours: 8 },
+    'All free': { time: '07:00 – 21:30', hours: 14 },
+    'Off': { time: 'Day off', hours: 0 }
+  };
+
+  DAYS.forEach((dayName, i) => {
+    const dayD = new Date(d.getTime() + i*86400000);
+    const dateStr = formatDate(dayD);
+    const slot = availMap[dateStr] || null;
+    const isWeekend = i >= 5;
+
+    const card = document.createElement('div');
+    const isOff = !slot || slot === 'Off';
+    card.className = 'shift-card' + (isOff ? ' off' : '') + (isWeekend && !isOff ? ' weekend' : '');
+
+    const info = slot ? slotTimes[slot] : { time: 'Not submitted', hours: 0 };
+    if (!isOff) { workDays++; totalHours += info.hours; }
+
+    let badgeClass = 'badge-off';
+    if (slot === 'Morning') badgeClass = 'badge-morning';
+    else if (slot === 'Afternoon') badgeClass = 'badge-afternoon';
+    else if (slot === 'All free') badgeClass = 'badge-full';
+
+    card.innerHTML = `
+      <div class="day-info">
+        <div class="day-name">${dayName}</div>
+        <div class="day-date">${formatDisplay(dayD)}</div>
+        ${slot ? `<span class="badge ${badgeClass}">${slot}</span>` : ''}
+      </div>
+      <div class="shift-info">
+        <div class="shift-time" style="${isOff?'color:#9ca3af':''}">${info.time}</div>
+        ${!isOff ? `<div class="shift-hours">${info.hours}h shift</div>` : ''}
+      </div>`;
+    container.appendChild(card);
+  });
+
+  document.getElementById('s-days').textContent = workDays;
+  document.getElementById('s-hours').textContent = totalHours + 'h';
+  document.getElementById('s-contract').textContent = contractHours + 'h';
+  document.getElementById('summary').style.display = 'flex';
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  staffId = session.user.id;
+  const { data: staff } = await sb.from('staff').select('name, contract_hours').single();
+  document.getElementById('topbar-name').textContent = staff?.name || session.user.email;
+  if (staff?.contract_hours) contractHours = staff.contract_hours;
+
+  populateWeeks();
+  await loadSchedule();
+}
+
+init();
+</script>
+</body>
+</html>

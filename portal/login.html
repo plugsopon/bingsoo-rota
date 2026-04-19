@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingsoo Staff Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .logo h1 {
+    font-size: 28px;
+    color: #1a1a2e;
+    font-weight: 700;
+  }
+  .logo p {
+    color: #666;
+    margin-top: 4px;
+    font-size: 14px;
+  }
+  .emoji { font-size: 48px; display: block; margin-bottom: 12px; }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    margin-top: 20px;
+  }
+  input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  input:focus { border-color: #667eea; }
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 28px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .error {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <span class="emoji">🍧</span>
+    <h1>Bingsoo Cafe</h1>
+    <p>Staff Portal — Sign In</p>
+  </div>
+  <label>Email</label>
+  <input type="email" id="email" placeholder="your.name@bingsoo.cafe" autocomplete="email">
+  <label>Password</label>
+  <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+  <div class="error" id="error-msg"></div>
+  <button class="btn" id="login-btn" onclick="login()">Sign In</button>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('error-msg');
+
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = 'Wrong email or password. Please try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+    return;
+  }
+
+  // Check if manager
+  const { data: staff } = await sb.from('staff').select('is_manager').single();
+  if (staff?.is_manager) {
+    window.location.href = 'manager.html';
+  } else {
+    window.location.href = 'availability.html';
+  }
+}
+
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+// Auto-redirect if already logged in
+sb.auth.getSession().then(({ data }) => {
+  if (data.session) {
+    sb.from('staff').select('is_manager').single().then(({ data: staff }) => {
+      window.location.href = staff?.is_manager ? 'manager.html' : 'availability.html';
+    });
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager Dashboard — Bingsoo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100vh; }
+  .topbar {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar span { font-size: 13px; opacity: 0.7; }
+  .logout-btn {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.25); }
+  .container { max-width: 1000px; margin: 28px auto; padding: 0 20px; }
+  .toolbar {
+    background: white;
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .toolbar label { font-weight: 600; color: #444; font-size: 14px; }
+  .toolbar select {
+    padding: 8px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+    min-width: 220px;
+  }
+  .toolbar select:focus { border-color: #667eea; }
+  .stats-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    flex: 1;
+    min-width: 120px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    text-align: center;
+  }
+  .stat-num { font-size: 26px; font-weight: 700; color: #1a1a2e; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 4px; }
+  .grid-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    overflow-x: auto;
+  }
+  .grid-card h2 { font-size: 16px; color: #1a1a2e; margin-bottom: 16px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: #f8f9ff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #555;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafbff; }
+  .name-cell { font-weight: 600; color: #1a1a2e; }
+  .role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+  .role-CM { background: #fce7f3; color: #9d174d; }
+  .role-SV { background: #ede9fe; color: #5b21b6; }
+  .role-CA { background: #e0f2fe; color: #075985; }
+  .slot-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .slot-Morning { background: #dbeafe; color: #1d4ed8; }
+  .slot-Afternoon { background: #fef3c7; color: #92400e; }
+  .slot-Allfree { background: #d1fae5; color: #065f46; }
+  .slot-Off { background: #f3f4f6; color: #6b7280; }
+  .slot-none { color: #d1d5db; font-style: italic; font-size: 11px; }
+  .day-header-weekend { color: #f59e0b; }
+  .loading { text-align: center; padding: 40px; color: #888; font-size: 15px; }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 24px 0 12px;
+  }
+  .coverage-row {
+    background: #f8f9ff;
+    font-weight: 600;
+    color: #667eea;
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <h1>🍧 Bingsoo — Manager Dashboard</h1>
+  </div>
+  <div class="topbar-right">
+    <span id="topbar-name"></span>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="toolbar">
+    <label>Week:</label>
+    <select id="week-select" onchange="loadData()"></select>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-num" id="s-submitted">–</div><div class="stat-label">Staff submitted</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-pending">–</div><div class="stat-label">Yet to submit</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-mon-fri">–</div><div class="stat-label">Avg available Mon–Fri</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-weekend">–</div><div class="stat-label">Avg available weekend</div></div>
+  </div>
+
+  <div class="grid-card">
+    <h2>Staff Availability Grid</h2>
+    <div id="table-container"><div class="loading">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAYS_FULL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function formatDate(d) { return d.toISOString().split('T')[0]; }
+function formatShort(d) {
+  return d.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+}
+
+function getWeeks(n = 10) {
+  const weeks = [];
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  const day = d.getDay();
+  const toMonday = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + toMonday - 7);
+  for (let i = 0; i < n; i++) {
+    weeks.push(new Date(d));
+    d.setDate(d.getDate() + 7);
+  }
+  return weeks;
+}
+
+function populateWeeks() {
+  const sel = document.getElementById('week-select');
+  const weeks = getWeeks(10);
+  weeks.forEach((m, i) => {
+    const sunday = new Date(m); sunday.setDate(sunday.getDate() + 6);
+    const opt = document.createElement('option');
+    opt.value = formatDate(m);
+    opt.textContent = `${formatShort(m)} – ${formatShort(sunday)}`;
+    if (i === 1) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadData() {
+  const weekStart = document.getElementById('week-select').value;
+  const d = new Date(weekStart + 'T00:00:00');
+  const weekEnd = formatDate(new Date(d.getTime() + 6*86400000));
+
+  document.getElementById('table-container').innerHTML = '<div class="loading">Loading...</div>';
+
+  const [staffRes, availRes] = await Promise.all([
+    sb.from('staff').select('id, name, role, contract_hours').order('role').order('name'),
+    sb.from('availability').select('staff_id, day, slot').gte('day', weekStart).lte('day', weekEnd)
+  ]);
+
+  const allStaff = staffRes.data || [];
+  const allAvail = availRes.data || [];
+
+  // Build lookup: staff_id -> { dateStr -> slot }
+  const availMap = {};
+  allAvail.forEach(a => {
+    if (!availMap[a.staff_id]) availMap[a.staff_id] = {};
+    availMap[a.staff_id][a.day] = a.slot;
+  });
+
+  // Date strings for each day
+  const dates = DAYS.map((_, i) => formatDate(new Date(d.getTime() + i*86400000)));
+
+  // Stats
+  const submitted = allStaff.filter(s => availMap[s.id] && Object.keys(availMap[s.id]).length > 0).length;
+  document.getElementById('s-submitted').textContent = submitted + '/' + allStaff.length;
+  document.getElementById('s-pending').textContent = allStaff.length - submitted;
+
+  // Count available per day
+  const countAvail = dates.map(date =>
+    allStaff.filter(s => availMap[s.id]?.[date] && availMap[s.id][date] !== 'Off').length
+  );
+  const weekdayAvg = countAvail.slice(0,5).reduce((a,b) => a+b, 0) / 5;
+  const weekendAvg = countAvail.slice(5,7).reduce((a,b) => a+b, 0) / 2;
+  document.getElementById('s-mon-fri').textContent = weekdayAvg.toFixed(1);
+  document.getElementById('s-weekend').textContent = weekendAvg.toFixed(1);
+
+  // Build table
+  let html = '<table><thead><tr><th>Name</th>';
+  dates.forEach((date, i) => {
+    const isWE = i >= 5;
+    const dayD = new Date(date + 'T00:00:00');
+    html += `<th class="${isWE ? 'day-header-weekend' : ''}">${DAYS[i]}<br><span style="font-weight:400;font-size:11px">${formatShort(dayD)}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  allStaff.forEach(staff => {
+    html += `<tr><td class="name-cell">${staff.name}<span class="role-badge role-${staff.role}">${staff.role}</span></td>`;
+    dates.forEach(date => {
+      const slot = availMap[staff.id]?.[date];
+      if (!slot) {
+        html += `<td><span class="slot-none">–</span></td>`;
+      } else {
+        const cls = 'slot-' + slot.replace(' ','');
+        html += `<td><span class="slot-pill ${cls}">${slot}</span></td>`;
+      }
+    });
+    html += '</tr>';
+  });
+
+  // Coverage row
+  html += `<tr class="coverage-row"><td>Available</td>`;
+  countAvail.forEach(c => { html += `<td>${c}</td>`; });
+  html += '</tr>';
+
+  html += '</tbody></table>';
+  document.getElementById('table-container').innerHTML = html;
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  const { data: staff } = await sb.from('staff').select('name, is_manager').single();
+  if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
+
+  document.getElementById('topbar-name').textContent = staff.name;
+  populateWeeks();
+  await loadData();
+}
+
+init();
+</script>
+</body>
+</html>

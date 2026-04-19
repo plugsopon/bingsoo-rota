@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit Availability — Bingsoo Staff</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f7ff;
+    min-height: 100vh;
+  }
+  .topbar {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 12px rgba(102,126,234,0.4);
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar span { font-size: 13px; opacity: 0.85; }
+  .logout-btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.3); }
+  .container { max-width: 700px; margin: 32px auto; padding: 0 20px; }
+  .week-selector {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .week-selector label { font-weight: 600; color: #444; font-size: 14px; }
+  .week-selector select {
+    padding: 8px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+    min-width: 200px;
+  }
+  .week-selector select:focus { border-color: #667eea; }
+  .nav-links {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .nav-link {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .nav-link:hover, .nav-link.active {
+    background: #667eea;
+    color: white;
+  }
+  .day-card {
+    background: white;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .day-label {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1a1a2e;
+    width: 100px;
+    flex-shrink: 0;
+  }
+  .day-label span {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: #888;
+    margin-top: 2px;
+  }
+  .slot-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .slot-btn {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .slot-btn:hover { border-color: #667eea; color: #667eea; }
+  .slot-btn.selected-morning { background: #dbeafe; border-color: #3b82f6; color: #1d4ed8; }
+  .slot-btn.selected-afternoon { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+  .slot-btn.selected-allfree { background: #d1fae5; border-color: #10b981; color: #065f46; }
+  .slot-btn.selected-off { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+  .submit-area {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-top: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .submit-hint { font-size: 13px; color: #666; }
+  .submit-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a1a2e;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: #065f46; }
+  .toast.error { background: #991b1b; }
+  .greeting {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+  .greeting-sub { font-size: 14px; color: #666; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <h1>🍧 Bingsoo Staff Portal</h1>
+    <span id="topbar-name">Loading...</span>
+  </div>
+  <button class="logout-btn" onclick="logout()">Sign Out</button>
+</div>
+
+<div class="container">
+  <div class="nav-links">
+    <a href="availability.html" class="nav-link active">📅 My Availability</a>
+    <a href="schedule.html" class="nav-link">🗓 My Schedule</a>
+  </div>
+
+  <p class="greeting" id="greeting">Hi there!</p>
+  <p class="greeting-sub">Select your availability for each day of the week.</p>
+
+  <div class="week-selector">
+    <label>Week starting:</label>
+    <select id="week-select" onchange="loadExisting()"></select>
+  </div>
+
+  <div id="days-container"></div>
+
+  <div class="submit-area">
+    <span class="submit-hint">Select a slot for every day, then click Submit.</span>
+    <button class="submit-btn" id="submit-btn" onclick="submitAvailability()">Submit Availability</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const SLOTS = ['Morning','Afternoon','All free','Off'];
+const SLOT_CLASS = {'Morning':'selected-morning','Afternoon':'selected-afternoon','All free':'selected-allfree','Off':'selected-off'};
+
+let staffId = null;
+let selections = {}; // date -> slot
+
+function getNextMondays(n = 4) {
+  const mondays = [];
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  // Go to next Monday (or today if Monday)
+  const day = d.getDay();
+  const diff = day === 1 ? 0 : (8 - day) % 7 || 7;
+  d.setDate(d.getDate() + diff);
+  for (let i = 0; i < n; i++) {
+    mondays.push(new Date(d));
+    d.setDate(d.getDate() + 7);
+  }
+  return mondays;
+}
+
+function formatDate(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function formatDisplay(d) {
+  return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+}
+
+function populateWeeks() {
+  const sel = document.getElementById('week-select');
+  const mondays = getNextMondays(6);
+  mondays.forEach(m => {
+    const sunday = new Date(m); sunday.setDate(sunday.getDate() + 6);
+    const opt = document.createElement('option');
+    opt.value = formatDate(m);
+    opt.textContent = `${formatDisplay(m)} – ${formatDisplay(sunday)}`;
+    sel.appendChild(opt);
+  });
+}
+
+function buildDaysUI() {
+  const weekStart = new Date(document.getElementById('week-select').value + 'T00:00:00');
+  const container = document.getElementById('days-container');
+  container.innerHTML = '';
+  selections = {};
+
+  DAYS.forEach((dayName, i) => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + i);
+    const dateStr = formatDate(d);
+
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    card.innerHTML = `
+      <div class="day-label">${dayName}<span>${formatDisplay(d)}</span></div>
+      <div class="slot-group" id="slots-${dateStr}">
+        ${SLOTS.map(s => `<button class="slot-btn" onclick="selectSlot('${dateStr}','${s}',this)">${s}</button>`).join('')}
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function selectSlot(date, slot, btn) {
+  selections[date] = slot;
+  const group = document.getElementById('slots-' + date);
+  group.querySelectorAll('.slot-btn').forEach(b => {
+    b.className = 'slot-btn';
+  });
+  btn.className = 'slot-btn ' + SLOT_CLASS[slot];
+}
+
+async function loadExisting() {
+  buildDaysUI();
+  if (!staffId) return;
+  const weekStart = document.getElementById('week-select').value;
+  const weekEnd = formatDate(new Date(new Date(weekStart + 'T00:00:00').setDate(new Date(weekStart + 'T00:00:00').getDate() + 6)));
+
+  const { data } = await sb.from('availability')
+    .select('day, slot')
+    .eq('staff_id', staffId)
+    .gte('day', weekStart)
+    .lte('day', weekEnd);
+
+  if (data) {
+    data.forEach(row => {
+      selections[row.day] = row.slot;
+      const group = document.getElementById('slots-' + row.day);
+      if (group) {
+        group.querySelectorAll('.slot-btn').forEach(b => {
+          if (b.textContent === row.slot) b.className = 'slot-btn ' + SLOT_CLASS[row.slot];
+        });
+      }
+    });
+  }
+}
+
+async function submitAvailability() {
+  const weekStart = document.getElementById('week-select').value;
+  const d = new Date(weekStart + 'T00:00:00');
+  const allDates = DAYS.map((_, i) => {
+    const day = new Date(d); day.setDate(day.getDate() + i);
+    return formatDate(day);
+  });
+
+  const missing = allDates.filter(date => !selections[date]);
+  if (missing.length > 0) {
+    showToast('Please select a slot for every day first.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const rows = allDates.map(date => ({
+    staff_id: staffId,
+    week_start: weekStart,
+    day: date,
+    slot: selections[date]
+  }));
+
+  const { error } = await sb.from('availability')
+    .upsert(rows, { onConflict: 'staff_id,day' });
+
+  btn.disabled = false;
+  btn.textContent = 'Submit Availability';
+
+  if (error) {
+    showToast('Error saving. Please try again.', 'error');
+  } else {
+    showToast('Availability saved successfully!', 'success');
+  }
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  staffId = session.user.id;
+  const { data: staff } = await sb.from('staff').select('name, is_manager').single();
+  document.getElementById('topbar-name').textContent = staff?.name || session.user.email;
+  document.getElementById('greeting').textContent = `Hi ${staff?.name || 'there'}! 👋`;
+
+  populateWeeks();
+  await loadExisting();
+}
+
+init();
+</script>
+</body>
+</html>
