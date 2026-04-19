@@ -123,13 +123,15 @@ async function login() {
     return;
   }
 
-  // Check if manager
-  const { data: staff } = await sb.from('staff').select('is_manager').single();
-  if (staff?.is_manager) {
-    window.location.href = 'manager.html';
-  } else {
-    window.location.href = 'availability.html';
-  }
+  await redirect(data.user.id);
+}
+
+async function redirect(userId) {
+  const { data: staff } = await sb.from('staff')
+    .select('is_manager')
+    .eq('id', userId)
+    .maybeSingle();
+  window.location.href = staff?.is_manager ? 'manager.html' : 'availability.html';
 }
 
 document.getElementById('password').addEventListener('keydown', e => {
@@ -138,11 +140,7 @@ document.getElementById('password').addEventListener('keydown', e => {
 
 // Auto-redirect if already logged in
 sb.auth.getSession().then(({ data }) => {
-  if (data.session) {
-    sb.from('staff').select('is_manager').single().then(({ data: staff }) => {
-      window.location.href = staff?.is_manager ? 'manager.html' : 'availability.html';
-    });
-  }
+  if (data.session) redirect(data.session.user.id);
 });
 </script>
 </body>
