@@ -124,6 +124,17 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
   .no-rota .big { font-size: 40px; margin-bottom: 12px; }
+@media (max-width: 600px) {
+  .container { margin: 16px auto; padding: 0 12px; }
+  .week-selector { padding: 14px 16px; flex-direction: column; align-items: stretch; }
+  .week-selector select { min-width: unset; }
+  .shift-card { padding: 14px 16px; gap: 10px; }
+  .day-name { font-size: 14px; }
+  .shift-time { font-size: 15px; }
+  .summary-card { padding: 16px; gap: 14px; }
+  .summary-num { font-size: 22px; }
+  .summary-label { font-size: 11px; }
+}
 </style>
 </head>
 <body>

@@ -181,6 +181,19 @@
     margin-bottom: 6px;
   }
   .greeting-sub { font-size: 14px; color: #666; margin-bottom: 20px; }
+@media (max-width: 600px) {
+  .container { margin: 16px auto; padding: 0 12px; }
+  .greeting { font-size: 18px; }
+  .greeting-sub { font-size: 13px; }
+  .week-selector { padding: 14px 16px; flex-direction: column; align-items: stretch; }
+  .week-selector select { min-width: unset; }
+  .day-card { padding: 12px 14px; gap: 8px; }
+  .day-label { width: 72px; font-size: 13px; }
+  .day-label span { font-size: 10px; }
+  .slot-btn { padding: 8px 10px; font-size: 12px; }
+  .submit-area { flex-direction: column; align-items: stretch; gap: 10px; }
+  .submit-btn { width: 100%; padding: 14px; }
+}
 </style>
 </head>
 <body>

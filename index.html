@@ -53,6 +53,23 @@
   iframe { flex: 1; border: none; width: 100%; height: 100%; }
   .empty { flex: 1; display: flex; align-items: center; justify-content: center;
     flex-direction: column; gap: 12px; color: #95A5A6; padding: 40px; text-align: center; }
+  @media (max-width: 700px) {
+    .topbar { padding: 10px 14px; gap: 6px; }
+    .topbar-left h1 { font-size: 0.95rem; }
+    .topbar-left .sub { display: none; }
+    .topbar-right { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; gap: 5px; scrollbar-width: none; }
+    .topbar-right::-webkit-scrollbar { display: none; }
+    .nav-btn { font-size: 0.72rem; padding: 5px 9px; flex-shrink: 0; }
+    .user-name { display: none; }
+    .signout-btn { font-size: 0.72rem; padding: 5px 9px; flex-shrink: 0; }
+    .layout { flex-direction: column; height: calc(100vh - 50px); }
+    .sidebar { display: none !important; }
+    #mobile-week-bar { display: flex !important; }
+    .preview-area { height: 100%; }
+    .toolbar { padding: 6px 12px; gap: 6px; flex-wrap: wrap; }
+    #week-title { font-size: 0.78rem; flex-basis: 100%; }
+    .btn { font-size: 0.72rem; padding: 5px 10px; }
+  }
 </style>
 </head>
 <body>
@@ -71,6 +88,15 @@
       <span class="user-name" id="user-name"></span>
       <button class="signout-btn" onclick="signOut()">Sign Out</button>
     </div>
+  </div>
+  <div id="mobile-week-bar" style="display:none; background:#1E2A38; padding:8px 12px; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.1);">
+    <span style="color:rgba(255,255,255,0.5);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap">Week</span>
+    <select id="mobile-week-sel" onchange="loadWeekByValue(this.value)" style="flex:1;padding:6px 10px;background:#2C3E50;border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:white;font-size:0.82rem;outline:none;">
+      <option value="rota_20042026_26042026.html" selected>W17 · 20 Apr – 26 Apr</option>
+<option value="rota_19042026_25042026.html" >W16 · 19 Apr – 25 Apr</option>
+<option value="rota_13042026_19042026.html" >W16 · 13 Apr – 19 Apr</option>
+
+    </select>
   </div>
   <div class="layout">
     <nav class="sidebar">
@@ -119,6 +145,12 @@ function showRota() {
     document.getElementById('rota-frame').src = path;
   }
   setNavActive(document.querySelector('.nav-btn'));
+}
+
+function loadWeekByValue(fname) {
+  if (!fname) return;
+  const li = document.querySelector(`#week-list li[data-file="${fname}"]`);
+  if (li) loadWeek('output/' + fname, fname, li);
 }
 
 function loadWeek(path, file, el) {
