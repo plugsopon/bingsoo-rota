@@ -61,7 +61,7 @@ export async function onRequestPost(context) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 2048,
         system: system || 'You are a helpful ROTA scheduling assistant for Bingsoo Cafe, a dessert cafe in the UK.',
         messages,
