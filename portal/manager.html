@@ -6,6 +6,7 @@
 <title>Manager Dashboard — Bingsoo</title>
 <script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
+<script>document.addEventListener('DOMContentLoaded',function(){if(document.documentElement.classList.contains('embedded')){document.querySelector('.topbar')?.remove();document.querySelector('.nav-links')?.remove();}});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
