@@ -136,7 +136,9 @@ function setNavActive(el) {
 function loadPage(url, el) {
   document.querySelector('.sidebar').style.display = 'none';
   document.querySelector('.toolbar').style.display = 'none';
-  document.getElementById('rota-frame').src = url + '?embed=1';
+  const frame = document.getElementById('rota-frame');
+  frame.onload = null; // portal pages don't need override injection
+  frame.src = url + '?embed=1';
   setNavActive(el);
 }
 
@@ -145,8 +147,10 @@ function showRota() {
   document.querySelector('.toolbar').style.display = 'flex';
   const firstActive = document.querySelector('#week-list li.active');
   if (firstActive) {
-    const path = 'output/' + firstActive.getAttribute('data-file');
-    document.getElementById('rota-frame').src = path;
+    const file = firstActive.getAttribute('data-file');
+    const frame = document.getElementById('rota-frame');
+    frame.onload = () => applyOverrides(frame, file);
+    frame.src = 'output/' + file;
   }
   setNavActive(document.querySelector('.nav-btn'));
 }
@@ -157,10 +161,55 @@ function loadWeekByValue(fname) {
   if (li) loadWeek('output/' + fname, fname, li);
 }
 
+// ---- Override injection from parent (more reliable than iframe self-fetching) ----
+function parseWeekDates(fname) {
+  // fname: rota_DDMMYYYY_DDMMYYYY.html
+  const m = fname.match(/rota_(\d{2})(\d{2})(\d{4})_(\d{2})(\d{2})(\d{4})\.html/);
+  if (!m) return null;
+  return {
+    start: `${m[3]}-${m[2]}-${m[1]}`,
+    end:   `${m[6]}-${m[5]}-${m[4]}`
+  };
+}
+
+async function applyOverrides(frame, fname) {
+  const dates = parseWeekDates(fname);
+  if (!dates) return;
+  try {
+    const { data: overrides, error } = await sb.rpc('get_week_overrides', {
+      p_week_start: dates.start, p_week_end: dates.end
+    });
+    if (error) { console.error('get_week_overrides error:', error); return; }
+    if (!overrides?.length) return;
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    overrides.forEach(ov => {
+      const cell = doc.querySelector(`[data-name="${ov.staff_name}"][data-date="${ov.date}"]`);
+      if (!cell) { console.warn('Override: no cell for', ov.staff_name, ov.date); return; }
+      cell.style.background = '#FFF8E1';
+      cell.style.borderTop = '3px solid #F59E0B';
+      const timeEl = cell.querySelector('.shift-time');
+      if (timeEl) timeEl.innerHTML = `${ov.start_time} \u2013 ${ov.end_time} <span style="color:#D97706;font-size:0.75rem">\u270f\ufe0f</span>`;
+      const hrs = (toMin(ov.end_time) - toMin(ov.start_time)) / 60 - (ov.break_hrs || 0);
+      const hrsEl = cell.querySelector('.shift-hrs');
+      if (hrsEl) hrsEl.textContent = hrs.toFixed(1) + 'h';
+      if (ov.note) {
+        let noteEl = cell.querySelector('.override-note');
+        if (!noteEl) { noteEl = doc.createElement('div'); noteEl.className = 'override-note'; cell.appendChild(noteEl); }
+        noteEl.style.cssText = 'font-size:0.7rem;color:#92400e;font-style:italic;margin-top:3px;';
+        noteEl.textContent = '\u270f\ufe0f ' + ov.note;
+      }
+    });
+  } catch(e) { console.error('applyOverrides:', e); }
+}
+
 function loadWeek(path, file, el) {
   document.querySelector('.sidebar').style.display = 'flex';
   document.querySelector('.toolbar').style.display = 'flex';
-  document.getElementById('rota-frame').src = path;
+  const frame = document.getElementById('rota-frame');
+  frame.onload = () => applyOverrides(frame, file);
+  frame.src = path;
   const lbl = el.querySelector('.wlabel').textContent;
   const wn  = el.querySelector('.wnum').textContent;
   document.getElementById('week-title').textContent = wn + ' · ' + lbl;
@@ -190,6 +239,15 @@ async function init() {
   }
 
   document.getElementById('app').style.display = 'flex';
+
+  // Apply overrides to the initial iframe
+  const frame = document.getElementById('rota-frame');
+  const initFile = frame.src.split('/').pop().split('?')[0];
+  frame.onload = () => applyOverrides(frame, initFile);
+  // If already loaded (cached), trigger manually
+  if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+    applyOverrides(frame, initFile);
+  }
 }
 
 init();
