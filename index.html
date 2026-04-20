@@ -87,6 +87,7 @@
       <span class="nav-btn" id="all-staff-btn" style="display:none" onclick="loadPage('portal/manager.html',this)">👥 All Staff</span>
       <span class="nav-btn" id="manage-staff-btn" style="display:none" onclick="loadPage('portal/staff-manage.html',this)">⚙️ Manage Staff</span>
       <span class="nav-btn" id="edit-rota-btn" style="display:none" onclick="loadPage('portal/rota-edit.html',this)">✏️ Edit ROTA</span>
+      <span class="nav-btn" id="ai-rota-btn" style="display:none" onclick="loadPage('portal/rota-ai.html',this)">🤖 AI Assistant</span>
       <span class="user-name" id="user-name"></span>
       <button class="signout-btn" onclick="signOut()">Sign Out</button>
     </div>
@@ -238,6 +239,7 @@ async function init() {
     document.getElementById('all-staff-btn').style.display = 'inline-flex';
     document.getElementById('manage-staff-btn').style.display = 'inline-flex';
     document.getElementById('edit-rota-btn').style.display = 'inline-flex';
+    document.getElementById('ai-rota-btn').style.display = 'inline-flex';
   }
 
   // Per-staff permissions (default true if not set)
