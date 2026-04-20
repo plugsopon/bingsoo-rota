@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit ROTA — Bingsoo Manager</title>
+<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
+<script>document.addEventListener('DOMContentLoaded',function(){if(document.documentElement.classList.contains('embedded')){document.querySelector('.topbar')?.remove();document.querySelector('.nav-links')?.remove();}});</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100vh; }
+  .topbar {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; padding: 16px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar span { font-size: 13px; opacity: 0.7; }
+  .logout-btn {
+    background: rgba(255,255,255,0.15); color: white;
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.25); }
+  .container { max-width: 1100px; margin: 28px auto; padding: 0 20px; }
+  .nav-links { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .nav-link {
+    background: white; color: #667eea; border: 2px solid #667eea;
+    border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .nav-link:hover, .nav-link.active { background: #667eea; color: white; }
+  .toolbar {
+    background: white; border-radius: 14px; padding: 18px 22px;
+    margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .toolbar label { font-weight: 600; color: #444; font-size: 14px; }
+  .toolbar select {
+    padding: 8px 14px; border: 2px solid #e5e7eb; border-radius: 8px;
+    font-size: 14px; outline: none; cursor: pointer; flex: 1; min-width: 220px;
+  }
+  .toolbar select:focus { border-color: #667eea; }
+  .hint-box {
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #1e40af;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .grid-card {
+    background: white; border-radius: 14px; padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow-x: auto;
+  }
+  .grid-card h2 { font-size: 16px; color: #1a1a2e; margin-bottom: 16px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+  th {
+    background: #f8f9ff; padding: 10px 12px; text-align: left;
+    font-weight: 600; color: #555; border-bottom: 2px solid #e5e7eb; white-space: nowrap;
+  }
+  th.day-th { text-align: center; min-width: 130px; }
+  td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .name-cell { font-weight: 600; color: #1a1a2e; padding: 6px 12px; white-space: nowrap; }
+  .role-badge {
+    display: inline-block; padding: 2px 7px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; margin-left: 5px;
+  }
+  .role-CM { background: #fce7f3; color: #9d174d; }
+  .role-SV { background: #ede9fe; color: #5b21b6; }
+  .role-CA { background: #e0f2fe; color: #075985; }
+  .day-header-weekend { color: #f59e0b; }
+
+  /* Shift cell */
+  .shift-cell { text-align: center; }
+  .slot-pill {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; margin-bottom: 4px;
+  }
+  .slot-Morning { background: #dbeafe; color: #1d4ed8; }
+  .slot-Afternoon { background: #fef3c7; color: #92400e; }
+  .slot-Allfree { background: #d1fae5; color: #065f46; }
+  .slot-Off { background: #f3f4f6; color: #6b7280; }
+  .slot-none { color: #d1d5db; font-style: italic; font-size: 11px; }
+
+  .time-row {
+    display: flex; gap: 3px; align-items: center; justify-content: center;
+    margin-top: 4px;
+  }
+  .time-input {
+    width: 56px; padding: 4px 4px; border: 1px solid #e5e7eb;
+    border-radius: 6px; font-size: 11px; text-align: center; outline: none;
+    background: #f9fafb; transition: all 0.15s; font-family: monospace;
+  }
+  .time-input:focus { border-color: #667eea; background: white; box-shadow: 0 0 0 2px rgba(102,126,234,0.15); }
+  .time-input.has-override { border-color: #f59e0b; background: #fffbeb; font-weight: 600; }
+  .time-sep { font-size: 11px; color: #9ca3af; }
+  .clear-btn {
+    background: none; border: none; cursor: pointer; padding: 2px;
+    color: #f87171; font-size: 12px; line-height: 1; opacity: 0.6;
+  }
+  .clear-btn:hover { opacity: 1; }
+  .note-input {
+    width: 100%; padding: 3px 6px; border: 1px solid #e5e7eb;
+    border-radius: 5px; font-size: 10px; color: #666; outline: none;
+    background: #f9fafb; margin-top: 3px; resize: none;
+  }
+  .note-input:focus { border-color: #667eea; background: white; }
+  .note-input.has-override { border-color: #f59e0b; background: #fffbeb; }
+
+  /* saving indicator */
+  .saving-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: #10b981; margin-left: 6px; opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .saving-dot.show { opacity: 1; }
+
+  .off-cell { background: #f9fafb; }
+  .no-avail-cell { background: #fafafa; }
+
+  /* legend */
+  .legend {
+    display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+    font-size: 12px; color: #666; align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-box {
+    width: 12px; height: 12px; border-radius: 3px; border: 1px solid #d1d5db;
+  }
+
+  .loading { text-align: center; padding: 40px; color: #888; font-size: 15px; }
+
+  @media (max-width: 768px) {
+    .container { padding: 0 12px; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .toolbar select { min-width: unset; }
+    .grid-card { padding: 14px 10px; }
+    th { padding: 8px 6px; font-size: 11px; }
+    td { padding: 5px 5px; }
+    .time-input { width: 48px; font-size: 10px; }
+    .name-cell { font-size: 12px; padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <h1>🍧 Bingsoo — Edit ROTA</h1>
+  </div>
+  <div class="topbar-right">
+    <span id="topbar-name"></span>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="nav-links">
+    <a href="../index.html" class="nav-link">📊 Rota Dashboard</a>
+    <a href="availability.html" class="nav-link">📅 My Availability</a>
+    <a href="schedule.html" class="nav-link">🗓 My Schedule</a>
+    <a href="manager.html" class="nav-link">👥 All Staff</a>
+    <a href="staff-manage.html" class="nav-link">⚙️ Manage Staff</a>
+    <a href="rota-edit.html" class="nav-link active">✏️ Edit ROTA</a>
+  </div>
+
+  <div class="hint-box">
+    ✏️ <span>Adjust staff shift times for last-minute changes. Overrides are highlighted in <strong style="color:#d97706">amber</strong>. Changes are saved automatically.</span>
+    <span class="saving-dot" id="saving-dot"></span>
+  </div>
+
+  <div class="toolbar">
+    <label>Week:</label>
+    <select id="week-select" onchange="loadData()"></select>
+  </div>
+
+  <div class="grid-card">
+    <h2>Staff Shift Times</h2>
+    <div class="legend">
+      <span>Base times from availability:</span>
+      <span class="legend-item"><span class="slot-pill slot-Morning">Morning</span> 07:00–14:00</span>
+      <span class="legend-item"><span class="slot-pill slot-Afternoon">Afternoon</span> 14:00–21:30</span>
+      <span class="legend-item"><span class="slot-pill slot-Allfree">All free</span> 07:00–21:30</span>
+      <span class="legend-item"><span class="legend-box" style="background:#fffbeb;border-color:#f59e0b"></span> Override set</span>
+    </div>
+    <div id="table-container"><div class="loading">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+const SLOT_DEFAULTS = {
+  'Morning':   { start: '07:00', end: '14:00' },
+  'Afternoon': { start: '14:00', end: '21:30' },
+  'All free':  { start: '07:00', end: '21:30' },
+  'Off':       null,
+};
+
+let overrideMap = {}; // key: `${staffId}_${date}` -> { id, start_time, end_time, note }
+let saveTimer = null;
+
+function formatDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatShort(d) {
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function getWeeks(n = 10) {
+  const weeks = [];
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  const day = d.getDay();
+  const toMonday = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + toMonday - 7);
+  for (let i = 0; i < n; i++) {
+    weeks.push(new Date(d));
+    d.setDate(d.getDate() + 7);
+  }
+  return weeks;
+}
+
+function populateWeeks() {
+  const sel = document.getElementById('week-select');
+  const weeks = getWeeks(10);
+  weeks.forEach((m, i) => {
+    const sunday = new Date(m); sunday.setDate(sunday.getDate() + 6);
+    const opt = document.createElement('option');
+    opt.value = formatDate(m);
+    opt.textContent = `${formatShort(m)} – ${formatShort(sunday)}`;
+    if (i === 1) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function flashSaved() {
+  const dot = document.getElementById('saving-dot');
+  if (!dot) return;
+  dot.classList.add('show');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => dot.classList.remove('show'), 1800);
+}
+
+async function loadData() {
+  const weekStart = document.getElementById('week-select').value;
+  const d = new Date(weekStart + 'T00:00:00');
+  const weekEnd = formatDate(new Date(d.getTime() + 6*86400000));
+
+  document.getElementById('table-container').innerHTML = '<div class="loading">Loading...</div>';
+
+  const [staffRes, availRes, overrideRes] = await Promise.all([
+    sb.from('staff').select('id, name, role').order('role').order('name'),
+    sb.from('availability').select('staff_id, day, slot').gte('day', weekStart).lte('day', weekEnd),
+    sb.rpc('get_rota_overrides', { p_week_start: weekStart, p_week_end: weekEnd })
+  ]);
+
+  const allStaff = staffRes.data || [];
+  const allAvail = availRes.data || [];
+  const allOverrides = overrideRes.data || [];
+
+  // Build availability lookup: staffId -> dateStr -> slot
+  const availMap = {};
+  allAvail.forEach(a => {
+    if (!availMap[a.staff_id]) availMap[a.staff_id] = {};
+    availMap[a.staff_id][a.day] = a.slot;
+  });
+
+  // Build override lookup: `staffId_date` -> override
+  overrideMap = {};
+  allOverrides.forEach(o => {
+    overrideMap[`${o.staff_id}_${o.date}`] = o;
+  });
+
+  const dates = DAYS.map((_, i) => formatDate(new Date(d.getTime() + i*86400000)));
+  const dateObjs = dates.map(ds => new Date(ds + 'T00:00:00'));
+
+  // Build table
+  let html = '<table><thead><tr><th style="min-width:130px">Name</th>';
+  dates.forEach((date, i) => {
+    const isWE = i >= 5;
+    html += `<th class="day-th ${isWE ? 'day-header-weekend' : ''}">${DAYS[i]}<br><span style="font-weight:400;font-size:11px">${formatShort(dateObjs[i])}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  allStaff.forEach(staff => {
+    html += `<tr><td class="name-cell">${staff.name}<span class="role-badge role-${staff.role}">${staff.role}</span></td>`;
+
+    dates.forEach(date => {
+      const slot = availMap[staff.id]?.[date];
+      const key = `${staff.id}_${date}`;
+      const override = overrideMap[key];
+      const defaults = slot ? SLOT_DEFAULTS[slot] : null;
+
+      if (!slot) {
+        // No availability submitted
+        html += `<td class="shift-cell no-avail-cell"><span class="slot-none">–</span></td>`;
+        return;
+      }
+
+      if (slot === 'Off') {
+        html += `<td class="shift-cell off-cell"><span class="slot-pill slot-Off">Off</span></td>`;
+        return;
+      }
+
+      const startVal = override ? override.start_time : defaults.start;
+      const endVal   = override ? override.end_time   : defaults.end;
+      const noteVal  = override ? (override.note || '') : '';
+      const hasOv    = !!override;
+      const ovClass  = hasOv ? 'has-override' : '';
+      const slotCls  = 'slot-' + slot.replace(' ','');
+
+      html += `<td class="shift-cell">
+        <div><span class="slot-pill ${slotCls}">${slot}</span></div>
+        <div class="time-row">
+          <input type="time" class="time-input ${ovClass}" id="s_${staff.id}_${date}"
+            value="${startVal}"
+            data-staff="${staff.id}" data-date="${date}" data-field="start"
+            data-default="${defaults.start}"
+            onchange="onTimeChange(this)" />
+          <span class="time-sep">–</span>
+          <input type="time" class="time-input ${ovClass}" id="e_${staff.id}_${date}"
+            value="${endVal}"
+            data-staff="${staff.id}" data-date="${date}" data-field="end"
+            data-default="${defaults.end}"
+            onchange="onTimeChange(this)" />
+          ${hasOv ? `<button class="clear-btn" title="Clear override"
+            onclick="clearOverride('${staff.id}','${date}')" >✕</button>` : ''}
+        </div>
+        <textarea class="note-input ${ovClass}" rows="1"
+          id="n_${staff.id}_${date}"
+          placeholder="note..."
+          data-staff="${staff.id}" data-date="${date}"
+          onchange="onNoteChange(this)">${noteVal}</textarea>
+      </td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('table-container').innerHTML = html;
+}
+
+async function onTimeChange(input) {
+  const staffId = input.dataset.staff;
+  const date    = input.dataset.date;
+  const field   = input.dataset.field;
+
+  const startEl = document.getElementById(`s_${staffId}_${date}`);
+  const endEl   = document.getElementById(`e_${staffId}_${date}`);
+  const noteEl  = document.getElementById(`n_${staffId}_${date}`);
+  const startVal = startEl.value;
+  const endVal   = endEl.value;
+  const noteVal  = noteEl ? noteEl.value : '';
+
+  await saveOverride(staffId, date, startVal, endVal, noteVal);
+}
+
+async function onNoteChange(textarea) {
+  const staffId = textarea.dataset.staff;
+  const date    = textarea.dataset.date;
+  const startEl = document.getElementById(`s_${staffId}_${date}`);
+  const endEl   = document.getElementById(`e_${staffId}_${date}`);
+  await saveOverride(staffId, date, startEl.value, endEl.value, textarea.value);
+}
+
+async function saveOverride(staffId, date, startTime, endTime, note) {
+  const { error } = await sb.rpc('upsert_rota_override', {
+    p_staff_id:   staffId,
+    p_date:       date,
+    p_start_time: startTime,
+    p_end_time:   endTime,
+    p_note:       note || ''
+  });
+
+  if (!error) {
+    const key = `${staffId}_${date}`;
+    overrideMap[key] = { staff_id: staffId, date, start_time: startTime, end_time: endTime, note };
+
+    // Style inputs as overridden
+    const startEl = document.getElementById(`s_${staffId}_${date}`);
+    const endEl   = document.getElementById(`e_${staffId}_${date}`);
+    const noteEl  = document.getElementById(`n_${staffId}_${date}`);
+    [startEl, endEl, noteEl].forEach(el => { if (el) el.classList.add('has-override'); });
+
+    // Add clear button if not present
+    const timeRow = startEl?.closest('.time-row');
+    if (timeRow && !timeRow.querySelector('.clear-btn')) {
+      const btn = document.createElement('button');
+      btn.className = 'clear-btn';
+      btn.title = 'Clear override';
+      btn.textContent = '✕';
+      btn.onclick = () => clearOverride(staffId, date);
+      timeRow.appendChild(btn);
+    }
+
+    flashSaved();
+  } else {
+    console.error('Save failed:', error);
+  }
+}
+
+async function clearOverride(staffId, date) {
+  const key = `${staffId}_${date}`;
+  const override = overrideMap[key];
+  if (!override?.id) {
+    // Try to find by querying — or just reload
+    await loadData();
+    return;
+  }
+
+  const { error } = await sb.rpc('delete_rota_override', { p_id: override.id });
+  if (!error) {
+    delete overrideMap[key];
+
+    // Reset inputs to defaults
+    const startEl = document.getElementById(`s_${staffId}_${date}`);
+    const endEl   = document.getElementById(`e_${staffId}_${date}`);
+    const noteEl  = document.getElementById(`n_${staffId}_${date}`);
+    if (startEl) { startEl.value = startEl.dataset.default; startEl.classList.remove('has-override'); }
+    if (endEl)   { endEl.value   = endEl.dataset.default;   endEl.classList.remove('has-override'); }
+    if (noteEl)  { noteEl.value  = ''; noteEl.classList.remove('has-override'); }
+
+    // Remove clear button
+    const timeRow = startEl?.closest('.time-row');
+    timeRow?.querySelector('.clear-btn')?.remove();
+
+    flashSaved();
+  }
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  const { data: profileArr } = await sb.rpc('get_my_profile');
+  const staff = profileArr?.[0];
+  if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
+
+  const topbarName = document.getElementById('topbar-name');
+  if (topbarName) topbarName.textContent = staff.name;
+
+  populateWeeks();
+  await loadData();
+}
+
+init();
+</script>
+</body>
+</html>

@@ -229,13 +229,22 @@ async function loadSchedule() {
   const container = document.getElementById('schedule-container');
   container.innerHTML = '';
 
-  // Try to load from rota_shifts table (future), or availability as fallback
-  // For now show availability with shift time estimates
-  const { data: avail } = await sb.from('availability')
-    .select('day, slot')
-    .eq('staff_id', staffId)
-    .gte('day', weekStart)
-    .lte('day', weekEnd);
+  // Load availability + any manager overrides for this staff member
+  const [availRes, overrideRes] = await Promise.all([
+    sb.from('availability')
+      .select('day, slot')
+      .eq('staff_id', staffId)
+      .gte('day', weekStart)
+      .lte('day', weekEnd),
+    sb.from('rota_overrides')
+      .select('date, start_time, end_time, note')
+      .eq('staff_id', staffId)
+      .gte('date', weekStart)
+      .lte('date', weekEnd)
+  ]);
+
+  const avail = availRes.data || [];
+  const overrides = overrideRes.data || [];
 
   if (!avail || avail.length === 0) {
     container.innerHTML = `<div class="no-rota">
@@ -250,27 +259,44 @@ async function loadSchedule() {
   const availMap = {};
   avail.forEach(a => { availMap[a.day] = a.slot; });
 
+  const overrideMap = {};
+  overrides.forEach(o => { overrideMap[o.date] = o; });
+
   let workDays = 0;
   let totalHours = 0;
 
   const slotTimes = {
-    'Morning': { time: '07:00 – 13:00', hours: 6 },
-    'Afternoon': { time: '13:00 – 21:30', hours: 8 },
-    'All free': { time: '07:00 – 21:30', hours: 14 },
-    'Off': { time: 'Day off', hours: 0 }
+    'Morning':   { start: '07:00', end: '14:00', hours: 7 },
+    'Afternoon': { start: '14:00', end: '21:30', hours: 7.5 },
+    'All free':  { start: '07:00', end: '21:30', hours: 14.5 },
+    'Off':       { start: null, end: null, hours: 0 }
   };
 
   DAYS.forEach((dayName, i) => {
     const dayD = new Date(d.getTime() + i*86400000);
     const dateStr = formatDate(dayD);
     const slot = availMap[dateStr] || null;
+    const override = overrideMap[dateStr] || null;
     const isWeekend = i >= 5;
 
     const card = document.createElement('div');
     const isOff = !slot || slot === 'Off';
     card.className = 'shift-card' + (isOff ? ' off' : '') + (isWeekend && !isOff ? ' weekend' : '');
 
-    const info = slot ? slotTimes[slot] : { time: 'Not submitted', hours: 0 };
+    const baseInfo = slot ? slotTimes[slot] : { start: null, end: null, hours: 0 };
+
+    // Use manager override times if set, otherwise fall back to slot defaults
+    let displayStart = override ? override.start_time : baseInfo.start;
+    let displayEnd   = override ? override.end_time   : baseInfo.end;
+    let displayHours = 0;
+    if (displayStart && displayEnd) {
+      const [sh, sm] = displayStart.split(':').map(Number);
+      const [eh, em] = displayEnd.split(':').map(Number);
+      displayHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    }
+    const timeStr = (displayStart && displayEnd) ? `${displayStart} – ${displayEnd}` : 'Day off';
+    const info = { time: timeStr, hours: displayHours };
+
     if (!isOff) { workDays++; totalHours += info.hours; }
 
     let badgeClass = 'badge-off';
@@ -283,10 +309,12 @@ async function loadSchedule() {
         <div class="day-name">${dayName}</div>
         <div class="day-date">${formatDisplay(dayD)}</div>
         ${slot ? `<span class="badge ${badgeClass}">${slot}</span>` : ''}
+        ${override ? `<span class="badge" style="background:#fef3c7;color:#d97706;margin-left:4px">✏️ Adjusted</span>` : ''}
+        ${override?.note ? `<div style="font-size:11px;color:#888;margin-top:4px">${override.note}</div>` : ''}
       </div>
       <div class="shift-info">
         <div class="shift-time" style="${isOff?'color:#9ca3af':''}">${info.time}</div>
-        ${!isOff ? `<div class="shift-hours">${info.hours}h shift</div>` : ''}
+        ${!isOff ? `<div class="shift-hours">${Math.round(info.hours * 10) / 10}h shift</div>` : ''}
       </div>`;
     container.appendChild(card);
   });
