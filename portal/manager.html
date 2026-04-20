@@ -248,11 +248,13 @@ async function loadData() {
   document.getElementById('table-container').innerHTML = '<div class="loading">Loading...</div>';
 
   const [staffRes, availRes] = await Promise.all([
-    sb.from('staff').select('id, name, role, contract_hours').order('role').order('name'),
+    sb.from('staff').select('id, name, role, contract_hours').order('name'),
     sb.from('availability').select('staff_id, day, slot').gte('day', weekStart).lte('day', weekEnd)
   ]);
 
-  const allStaff = staffRes.data || [];
+  let allStaff = staffRes.data || [];
+  const ROLE_ORDER = { 'CM': 0, 'SV': 1, 'CA': 2 };
+  allStaff.sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) || a.name.localeCompare(b.name));
   const allAvail = availRes.data || [];
 
   // Build lookup: staff_id -> { dateStr -> slot }
