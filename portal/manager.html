@@ -308,7 +308,8 @@ async function init() {
   const staff = profileArr?.[0];
   if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
 
-  document.getElementById('topbar-name').textContent = staff.name;
+  const topbarName = document.getElementById('topbar-name');
+  if (topbarName) topbarName.textContent = staff.name;
 
   populateWeeks();
   await loadData();

@@ -297,9 +297,11 @@ async function init() {
   staffId = session.user.id;
   const { data: profileArr } = await sb.rpc('get_my_profile');
   const staff = profileArr?.[0];
-  document.getElementById('topbar-name').textContent = staff?.name || session.user.email;
+  const topbarName = document.getElementById('topbar-name');
+  if (topbarName) topbarName.textContent = staff?.name || session.user.email;
   if (staff?.contract_hours) contractHours = staff.contract_hours;
-  if (staff?.is_manager) document.getElementById('manager-link').style.display = 'inline-flex';
+  const managerLink = document.getElementById('manager-link');
+  if (staff?.is_manager && managerLink) managerLink.style.display = 'inline-flex';
 
   populateWeeks();
   await loadSchedule();
