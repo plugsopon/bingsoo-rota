@@ -52,7 +52,35 @@ export async function onRequestPost(context) {
       return json({ error: 'ANTHROPIC_API_KEY not configured on server' }, 500);
     }
 
-    // ── 4. Call Claude API ────────────────────────────────────────────
+    // ── 4. Discover available model then call Claude API ─────────────
+    // Try models in order until one works
+    const modelsToTry = [
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-haiku-20241022',
+      'claude-3-haiku-20240307',
+      'claude-3-sonnet-20240229',
+    ];
+
+    // First, get the list of available models to pick the best one
+    let chosenModel = modelsToTry[0];
+    try {
+      const modelsRes = await fetch('https://api.anthropic.com/v1/models', {
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+      });
+      if (modelsRes.ok) {
+        const modelsData = await modelsRes.json();
+        const available = (modelsData.data || []).map(m => m.id);
+        // Prefer haiku (cheapest), then sonnet
+        const preferred = available.find(id => id.includes('haiku')) ||
+                          available.find(id => id.includes('sonnet')) ||
+                          available[0];
+        if (preferred) chosenModel = preferred;
+      }
+    } catch (_) { /* use default */ }
+
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -61,7 +89,7 @@ export async function onRequestPost(context) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
+        model: chosenModel,
         max_tokens: 2048,
         system: system || 'You are a helpful ROTA scheduling assistant for Bingsoo Cafe, a dessert cafe in the UK.',
         messages,
@@ -73,8 +101,8 @@ export async function onRequestPost(context) {
     // If error from Anthropic, return full error details for debugging
     if (!claudeRes.ok) {
       return json({
-        error: claudeData?.error?.message || JSON.stringify(claudeData),
-        _debug: { status: claudeRes.status, body: claudeData }
+        error: `[model: ${chosenModel}] ${claudeData?.error?.message || JSON.stringify(claudeData)}`,
+        _debug: { status: claudeRes.status, chosenModel, body: claudeData }
       }, claudeRes.status);
     }
 
