@@ -2,16 +2,16 @@
 Staff,,Sunday,,,,,Monday,,,,,Tuesday,,,,,Wednesday,,,,,Thursday,,,,,Friday,,,,,Saturday,,,,,
 ,,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,
 Demand,,HIGH (~£2148),,,,,LOW (~£1095),,,,,LOW (~£1061),,,,,LOW (~£1181),,,,,LOW (~£1028),,,,,MEDIUM (~£1473),,,,,HIGH (~£3030),,,,,
-Weather,,Rain:0mm | 15.4°C,,,,,Rain:0.4mm | 12.8°C,,,,,Rain:0mm | 14.0°C,,,,,Rain:0mm | 14.1°C,,,,,Rain:0mm | 16.7°C,,,,,Rain:0mm | 16.2°C,,,,,Rain:0mm | 13.3°C,,,,,
+Weather,,Rain:0mm | 15.4°C,,,,,Rain:0.3mm | 12.7°C,,,,,Rain:0mm | 14.0°C,,,,,Rain:0mm | 14.1°C,,,,,Rain:0mm | 16.7°C,,,,,Rain:0mm | 16.2°C,,,,,Rain:0mm | 13.3°C,,,,,
 
-Daeun,CA,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,7.0h
+Som,CM,07:00,14:00,0.5h,10:30,11:00,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,07:00,14:00,0.5h,10:30,11:00,07:00,20:00,1.0h,13:30,14:30,39.0h
 Dongjune,SV,14:00,21:30,0.5h,17:45,18:15,07:00,14:00,0.5h,10:30,11:00,14:00,21:30,0.5h,17:45,18:15,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,OFF,,,,,OFF,,,,,27.5h
+Daeun,CA,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,7.0h
 Haeun,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,07:00,21:30,1.0h,14:15,15:15,OFF,,,,,OFF,,,,,13.5h
 Jin,CA,07:00,21:30,1.0h,14:15,15:15,07:00,21:30,1.0h,14:15,15:15,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,27.0h
 KaYan,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,07:00,21:30,1.0h,14:15,15:15,OFF,,,,,13.5h
 Linna,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,07:00,14:00,0.5h,10:30,11:00,OFF,,,,,6.5h
 Riwon,CA,OFF,,,,,OFF,,,,,OFF,,,,,07:00,21:30,1.0h,14:15,15:15,OFF,,,,,OFF,,,,,OFF,,,,,13.5h
-Som,CM,07:00,14:00,0.5h,10:30,11:00,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,07:00,14:00,0.5h,10:30,11:00,07:00,20:00,1.0h,13:30,14:30,39.0h
 Yujin,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
 
 Daily Hours,,34.0h,,,,,20.0h,,,,,14.0h,,,,,20.5h,,,,,20.5h,,,,,26.5h,,,,,12.0h,,,,,147.5h
