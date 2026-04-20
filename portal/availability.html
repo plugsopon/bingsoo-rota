@@ -130,6 +130,22 @@
   .slot-btn.selected-afternoon { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
   .slot-btn.selected-allfree { background: #d1fae5; border-color: #10b981; color: #065f46; }
   .slot-btn.selected-off { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+  .day-note {
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #555;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    background: #fafafa;
+    transition: border-color 0.2s;
+  }
+  .day-note:focus { border-color: #667eea; background: white; }
+  .day-note::placeholder { color: #bbb; }
   .submit-area {
     background: white;
     border-radius: 14px;
@@ -243,6 +259,7 @@ const SLOT_CLASS = {'Morning':'selected-morning','Afternoon':'selected-afternoon
 
 let staffId = null;
 let selections = {}; // date -> slot
+let notes = {};      // date -> note text
 
 function getNextMondays(n = 4) {
   const mondays = [];
@@ -284,6 +301,7 @@ function buildDaysUI() {
   const container = document.getElementById('days-container');
   container.innerHTML = '';
   selections = {};
+  notes = {};
 
   DAYS.forEach((dayName, i) => {
     const d = new Date(weekStart);
@@ -292,11 +310,18 @@ function buildDaysUI() {
 
     const card = document.createElement('div');
     card.className = 'day-card';
+    card.style.flexDirection = 'column';
+    card.style.alignItems = 'stretch';
     card.innerHTML = `
-      <div class="day-label">${dayName}<span>${formatDisplay(d)}</span></div>
-      <div class="slot-group" id="slots-${dateStr}">
-        ${SLOTS.map(s => `<button class="slot-btn" onclick="selectSlot('${dateStr}','${s}',this)">${s}</button>`).join('')}
-      </div>`;
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div class="day-label">${dayName}<span>${formatDisplay(d)}</span></div>
+        <div class="slot-group" id="slots-${dateStr}">
+          ${SLOTS.map(s => `<button class="slot-btn" onclick="selectSlot('${dateStr}','${s}',this)">${s}</button>`).join('')}
+        </div>
+      </div>
+      <textarea class="day-note" id="note-${dateStr}" rows="1"
+        placeholder="Additional note (e.g. available from 9am but only 2.5h, must leave by 12pm...)"
+        onchange="notes['${dateStr}']=this.value"></textarea>`;
     container.appendChild(card);
   });
 }
@@ -304,9 +329,7 @@ function buildDaysUI() {
 function selectSlot(date, slot, btn) {
   selections[date] = slot;
   const group = document.getElementById('slots-' + date);
-  group.querySelectorAll('.slot-btn').forEach(b => {
-    b.className = 'slot-btn';
-  });
+  group.querySelectorAll('.slot-btn').forEach(b => { b.className = 'slot-btn'; });
   btn.className = 'slot-btn ' + SLOT_CLASS[slot];
 }
 
@@ -330,6 +353,12 @@ async function loadExisting() {
         group.querySelectorAll('.slot-btn').forEach(b => {
           if (b.textContent === row.slot) b.className = 'slot-btn ' + SLOT_CLASS[row.slot];
         });
+      }
+      // Restore note
+      if (row.note) {
+        notes[row.day] = row.note;
+        const noteEl = document.getElementById('note-' + row.day);
+        if (noteEl) noteEl.value = row.note;
       }
     });
   }
@@ -357,7 +386,8 @@ async function submitAvailability() {
     staff_id: staffId,
     week_start: weekStart,
     day: date,
-    slot: selections[date]
+    slot: selections[date],
+    note: notes[date] || ''
   }));
 
   const { error } = await sb.from('availability')

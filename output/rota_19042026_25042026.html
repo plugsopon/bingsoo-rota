@@ -113,7 +113,7 @@
   .demand-weather { font-size: 0.75rem; opacity: 0.8; }
 
   /* ===== STAFF ROWS ===== */
-  tr:hover td { background: #F8F9FA !important; }
+  tbody tr:not(.totals-row):not(.demand-row):hover td { background: #F8F9FA; }
   tr:nth-child(even) .staff-name-cell,
   tr:nth-child(even) .hours-cell { background: #FAFBFC; }
 

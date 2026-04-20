@@ -77,17 +77,43 @@
   .visa-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; background: #f0fdf4; color: #166534; }
   .visa-badge.restricted { background: #fef3c7; color: #92400e; }
   .hours-tag { font-size: 12px; color: #666; font-weight: 500; }
-  .staff-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .staff-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: flex-start; }
   .edit-btn {
     background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;
     border-radius: 8px; padding: 7px 16px; font-size: 12px; cursor: pointer; font-weight: 600;
   }
   .edit-btn:hover { background: #e0f2fe; }
+  .save-inline-btn {
+    background: linear-gradient(135deg,#667eea,#764ba2); color: white; border: none;
+    border-radius: 8px; padding: 7px 16px; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
+  .save-inline-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .cancel-inline-btn {
+    background: #f3f4f6; color: #374151; border: none;
+    border-radius: 8px; padding: 7px 16px; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
   .del-btn {
     background: #fff1f2; color: #be123c; border: 1px solid #fecdd3;
     border-radius: 8px; padding: 7px 16px; font-size: 12px; cursor: pointer; font-weight: 600;
   }
   .del-btn:hover { background: #ffe4e6; }
+
+  /* Inline edit form */
+  .inline-edit {
+    display: none; margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid #f0f0f0; width: 100%;
+  }
+  .inline-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .inline-group { flex: 1; min-width: 120px; }
+  .inline-group label { display: block; font-size: 11px; font-weight: 600; color: #888; margin-bottom: 4px; }
+  .inline-group select, .inline-group input {
+    width: 100%; padding: 7px 10px; border: 1px solid #e5e7eb;
+    border-radius: 7px; font-size: 13px; outline: none;
+  }
+  .inline-group select:focus, .inline-group input:focus { border-color: #667eea; }
+  .inline-checks { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+  .inline-check { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #444; cursor: pointer; }
+  .inline-check input { width: 14px; height: 14px; cursor: pointer; }
 
   /* Modal */
   .modal-overlay {
@@ -343,33 +369,135 @@ function renderStaff(staff) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div>No staff yet. Click "+ Add Staff" to add one.</div></div>`;
     return;
   }
+
+  const visaOptions = [
+    ['British/Settled',  '🇬🇧 British / Settled Status'],
+    ['Student Visa',     '🎓 Student Visa — limited to 20h/week'],
+    ['Graduate Visa',    '🎓 Graduate Visa'],
+    ['Skilled Worker',   '💼 Skilled Worker Visa'],
+    ['Holiday/Other',    '✈️ Holiday / Other — limited to 20h/week'],
+  ];
+
   el.innerHTML = staff.map(s => {
     const initials = s.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     const restricted = VISA_RESTRICTED.has(s.visa_type);
     const visaLabel = (s.visa_type || 'British/Settled').replace(' — limited to 20h/week', '').replace(' — จำกัด 20h/สัปดาห์', '');
-    return `<div class="staff-card">
+    const sid = s.id;
+
+    const roleOpts = ['Manager','Supervisor','Team Leader','Team Member']
+      .map(r => `<option value="${r}" ${s.role===r?'selected':''}>${r}</option>`).join('');
+    const visaOpts = visaOptions
+      .map(([v,l]) => `<option value="${v}" ${s.visa_type===v?'selected':''}>${l}</option>`).join('');
+
+    return `<div class="staff-card" id="card-${sid}" style="flex-wrap:wrap">
       <div class="staff-avatar">${initials}</div>
-      <div class="staff-info">
+      <div class="staff-info" style="flex:1;min-width:160px">
         <div class="staff-name">
           ${s.name}
           ${s.is_manager ? '<span class="manager-tag">MANAGER</span>' : ''}
         </div>
         <div class="staff-email">${s.email || '—'}</div>
-        <div class="staff-meta">
+        <div class="staff-meta" id="compact-${sid}">
           <span class="role-badge role-${s.role.replace(/ /g,'-')}">${s.role}</span>
-          <span class="visa-badge ${restricted ? 'restricted' : ''}">${visaLabel}</span>
+          <span class="visa-badge ${restricted?'restricted':''}">${visaLabel}</span>
           <span class="hours-tag">⏱ ${s.contract_hours}h/week</span>
         </div>
+
+        <!-- Inline edit form -->
+        <div class="inline-edit" id="edit-${sid}">
+          <div class="inline-row">
+            <div class="inline-group">
+              <label>Role</label>
+              <select id="ie-role-${sid}">${roleOpts}</select>
+            </div>
+            <div class="inline-group" style="max-width:110px">
+              <label>Hours/week</label>
+              <input type="number" id="ie-hours-${sid}" min="1" max="48" value="${s.contract_hours}">
+            </div>
+          </div>
+          <div class="inline-group" style="margin-bottom:8px">
+            <label>Visa type</label>
+            <select id="ie-visa-${sid}" onchange="onInlineVisaChange('${sid}')">${visaOpts}</select>
+          </div>
+          <div class="inline-checks">
+            <label class="inline-check"><input type="checkbox" id="ie-mgr-${sid}" ${s.is_manager?'checked':''}> 👑 Manager</label>
+            <label class="inline-check"><input type="checkbox" id="ie-rota-${sid}" ${s.can_view_rota!==false?'checked':''}> 📊 View ROTA</label>
+            <label class="inline-check"><input type="checkbox" id="ie-sched-${sid}" ${s.can_view_schedule!==false?'checked':''}> 🗓 View Schedule</label>
+          </div>
+        </div>
       </div>
-      <div class="staff-actions">
-        <button class="edit-btn" onclick="openEditModal('${s.id}')">✏️ Edit</button>
-        <button class="del-btn" onclick="openConfirm('${s.id}','${s.name.replace(/'/g,"\\'")}')">🗑 Remove</button>
+
+      <div class="staff-actions" id="actions-${sid}">
+        <div id="btn-compact-${sid}" style="display:flex;gap:8px">
+          <button class="edit-btn" onclick="startInlineEdit('${sid}')">✏️ Edit</button>
+          <button class="del-btn" onclick="openConfirm('${sid}','${s.name.replace(/'/g,"\\'")}')">🗑 Remove</button>
+        </div>
+        <div id="btn-edit-${sid}" style="display:none;gap:8px;flex-direction:column">
+          <button class="save-inline-btn" id="savebtn-${sid}" onclick="saveInline('${sid}')">✅ Save Changes</button>
+          <button class="cancel-inline-btn" onclick="cancelInlineEdit('${sid}')">Cancel</button>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
 
-// ── Modal: open/close ───────────────────────────────────────────
+// ── Inline edit (expand card in place) ─────────────────────────
+function startInlineEdit(sid) {
+  document.getElementById('compact-' + sid).style.display = 'none';
+  document.getElementById('edit-' + sid).style.display = 'block';
+  document.getElementById('btn-compact-' + sid).style.display = 'none';
+  document.getElementById('btn-edit-' + sid).style.display = 'flex';
+}
+
+function cancelInlineEdit(sid) {
+  document.getElementById('compact-' + sid).style.display = 'flex';
+  document.getElementById('edit-' + sid).style.display = 'none';
+  document.getElementById('btn-compact-' + sid).style.display = 'flex';
+  document.getElementById('btn-edit-' + sid).style.display = 'none';
+}
+
+function onInlineVisaChange(sid) {
+  const visa = document.getElementById('ie-visa-' + sid).value;
+  const h = VISA_HOURS[visa] ?? 40;
+  if (VISA_RESTRICTED.has(visa)) {
+    document.getElementById('ie-hours-' + sid).value = h;
+  }
+}
+
+async function saveInline(sid) {
+  const s = allStaff.find(x => x.id === sid);
+  if (!s) return;
+
+  const role     = document.getElementById('ie-role-' + sid).value;
+  const hours    = parseInt(document.getElementById('ie-hours-' + sid).value) || 20;
+  const visa     = document.getElementById('ie-visa-' + sid).value;
+  const isMgr    = document.getElementById('ie-mgr-' + sid).checked;
+  const canRota  = document.getElementById('ie-rota-' + sid).checked;
+  const canSched = document.getElementById('ie-sched-' + sid).checked;
+
+  if (VISA_RESTRICTED.has(visa) && hours > VISA_HOURS[visa]) {
+    showToast(`⚠️ This visa allows max ${VISA_HOURS[visa]}h/week`, 'error'); return;
+  }
+
+  const btn = document.getElementById('savebtn-' + sid);
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    const { error } = await sb.rpc('upsert_staff_member', {
+      p_id: sid, p_name: s.name, p_email: null,
+      p_role: role, p_visa_type: visa, p_contract_hours: hours,
+      p_is_manager: isMgr, p_can_view_rota: canRota, p_can_view_schedule: canSched,
+    });
+    if (error) throw new Error(error.message);
+    showToast(`✅ Updated ${s.name}`, 'success');
+    await loadStaff();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+    btn.disabled = false; btn.textContent = '✅ Save Changes';
+  }
+}
+
+// ── Modal: Add only (Edit is now inline) ────────────────────────
 function openAddModal() {
   editingId = null;
   document.getElementById('modal-title').textContent = '➕ Add Staff Member';
@@ -390,48 +518,24 @@ function openAddModal() {
   document.getElementById('modal').style.display = 'flex';
 }
 
-function openEditModal(staffId) {
-  const s = allStaff.find(x => x.id === staffId);
-  if (!s) return;
-  editingId = staffId;
-  document.getElementById('modal-title').textContent = `✏️ Edit — ${s.name}`;
-  document.getElementById('f-name').value = s.name;
-  document.getElementById('f-email').value = s.email || '';
-  document.getElementById('f-email').disabled = true;
-  document.getElementById('email-hint').textContent = 'Email cannot be changed after creation';
-  document.getElementById('pw-group').style.display = 'none';
-  document.getElementById('f-role').value = s.role;
-  document.getElementById('f-visa').value = s.visa_type || 'British/Settled';
-  document.getElementById('f-hours').value = s.contract_hours;
-  document.getElementById('f-manager').checked = s.is_manager;
-  document.getElementById('f-can-rota').checked = s.can_view_rota !== false;
-  document.getElementById('f-can-schedule').checked = s.can_view_schedule !== false;
-  const restricted = VISA_RESTRICTED.has(s.visa_type);
-  document.getElementById('hours-hint').textContent = restricted
-    ? `⚠️ This visa allows max ${VISA_HOURS[s.visa_type]}h/week`
-    : 'Auto from visa type';
-  document.getElementById('save-btn').textContent = 'Save Changes';
-  document.getElementById('modal').style.display = 'flex';
-}
-
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 function handleOverlayClick(e) { if (e.target.id === 'modal') closeModal(); }
 
-// ── Save (add or edit) ──────────────────────────────────────────
+// ── Save (Add only — Edit is handled by saveInline) ─────────────
 async function saveStaff() {
-  const name        = document.getElementById('f-name').value.trim();
-  const email       = document.getElementById('f-email').value.trim().toLowerCase();
-  const password    = document.getElementById('f-password').value;
-  const role        = document.getElementById('f-role').value;
-  const visa        = document.getElementById('f-visa').value;
-  const hours       = parseInt(document.getElementById('f-hours').value) || 20;
-  const isMgr       = document.getElementById('f-manager').checked;
-  const canRota     = document.getElementById('f-can-rota').checked;
-  const canSchedule = document.getElementById('f-can-schedule').checked;
+  const name     = document.getElementById('f-name').value.trim();
+  const email    = document.getElementById('f-email').value.trim().toLowerCase();
+  const password = document.getElementById('f-password').value;
+  const role     = document.getElementById('f-role').value;
+  const visa     = document.getElementById('f-visa').value;
+  const hours    = parseInt(document.getElementById('f-hours').value) || 20;
+  const isMgr    = document.getElementById('f-manager').checked;
+  const canRota  = document.getElementById('f-can-rota').checked;
+  const canSched = document.getElementById('f-can-schedule').checked;
 
-  if (!name)                        { showToast('Please enter staff name', 'error'); return; }
-  if (!editingId && !email)         { showToast('Please enter email', 'error'); return; }
-  if (!editingId && password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+  if (!name)               { showToast('Please enter staff name', 'error'); return; }
+  if (!email)              { showToast('Please enter email', 'error'); return; }
+  if (password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
   if (VISA_RESTRICTED.has(visa) && hours > VISA_HOURS[visa]) {
     showToast(`⚠️ This visa allows max ${VISA_HOURS[visa]}h/week`, 'error'); return;
   }
@@ -440,38 +544,24 @@ async function saveStaff() {
   btn.disabled = true; btn.textContent = 'Saving...';
 
   try {
-    let staffId = editingId;
+    const { data: authData, error: authErr } = await sb.auth.signUp({ email, password });
+    if (authErr) throw new Error(authErr.message);
+    if (!authData?.user?.id) throw new Error('Failed to create account');
 
-    if (!editingId) {
-      // Create Supabase auth account
-      const { data: authData, error: authErr } = await sb.auth.signUp({ email, password });
-      if (authErr) throw new Error(authErr.message);
-      if (!authData?.user?.id) throw new Error('Failed to create account');
-      staffId = authData.user.id;
-    }
-
-    // Upsert staff record via RPC
     const { error: rpcErr } = await sb.rpc('upsert_staff_member', {
-      p_id: staffId,
-      p_name: name,
-      p_email: editingId ? null : email,
-      p_role: role,
-      p_visa_type: visa,
-      p_contract_hours: hours,
-      p_is_manager: isMgr,
-      p_can_view_rota: canRota,
-      p_can_view_schedule: canSchedule,
+      p_id: authData.user.id, p_name: name, p_email: email,
+      p_role: role, p_visa_type: visa, p_contract_hours: hours,
+      p_is_manager: isMgr, p_can_view_rota: canRota, p_can_view_schedule: canSched,
     });
     if (rpcErr) throw new Error(rpcErr.message);
 
-    showToast(editingId ? `✅ Updated ${name}` : `✅ Added ${name}`, 'success');
+    showToast(`✅ Added ${name}`, 'success');
     closeModal();
     await loadStaff();
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
-    btn.disabled = false;
-    btn.textContent = editingId ? 'Save Changes' : 'Add Staff Member';
+    btn.disabled = false; btn.textContent = 'Add Staff Member';
   }
 }
 
