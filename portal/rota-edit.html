@@ -97,6 +97,14 @@
   .time-input:focus { border-color: #667eea; background: white; box-shadow: 0 0 0 2px rgba(102,126,234,0.15); }
   .time-input.has-override { border-color: #f59e0b; background: #fffbeb; font-weight: 600; }
   .time-sep { font-size: 11px; color: #9ca3af; }
+  .confirm-btn {
+    background: #10b981; border: none; cursor: pointer; color: white;
+    font-size: 13px; font-weight: 700; border-radius: 50%;
+    width: 22px; height: 22px; display: inline-flex; align-items: center;
+    justify-content: center; padding: 0; transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .confirm-btn:hover { background: #059669; transform: scale(1.1); }
   .clear-btn {
     background: none; border: none; cursor: pointer; padding: 2px;
     color: #f87171; font-size: 12px; line-height: 1; opacity: 0.6;
@@ -167,7 +175,7 @@
   </div>
 
   <div class="hint-box">
-    ✏️ <span>Adjust staff shift times for last-minute changes. Overrides are highlighted in <strong style="color:#d97706">amber</strong>. Changes are saved automatically.</span>
+    ✏️ <span>Adjust staff shift times for last-minute changes. Overrides are highlighted in <strong style="color:#d97706">amber</strong>. Press <strong style="color:#10b981">✓</strong> to confirm each change.</span>
     <span class="saving-dot" id="saving-dot"></span>
   </div>
 
@@ -363,27 +371,59 @@ async function loadData() {
   document.getElementById('table-container').innerHTML = html;
 }
 
-async function onTimeChange(input) {
+function onTimeChange(input) {
   const staffId = input.dataset.staff;
   const date    = input.dataset.date;
-  const field   = input.dataset.field;
 
-  const startEl = document.getElementById(`s_${staffId}_${date}`);
-  const endEl   = document.getElementById(`e_${staffId}_${date}`);
-  const noteEl  = document.getElementById(`n_${staffId}_${date}`);
-  const startVal = startEl.value;
-  const endVal   = endEl.value;
-  const noteVal  = noteEl ? noteEl.value : '';
-
-  await saveOverride(staffId, date, startVal, endVal, noteVal);
+  // Show ✓ confirm button — don't auto-save
+  const timeRow = input.closest('.time-row');
+  if (!timeRow) return;
+  timeRow.querySelector('.clear-btn')?.remove();
+  if (!timeRow.querySelector('.confirm-btn')) {
+    const btn = document.createElement('button');
+    btn.className = 'confirm-btn';
+    btn.title = 'Save changes';
+    btn.textContent = '✓';
+    btn.onclick = () => confirmOverride(staffId, date);
+    timeRow.appendChild(btn);
+  }
 }
 
 async function onNoteChange(textarea) {
   const staffId = textarea.dataset.staff;
   const date    = textarea.dataset.date;
+  // If override already exists, auto-save note change
+  const key = `${staffId}_${date}`;
+  if (overrideMap[key]) {
+    const startEl = document.getElementById(`s_${staffId}_${date}`);
+    const endEl   = document.getElementById(`e_${staffId}_${date}`);
+    await saveOverride(staffId, date, startEl.value, endEl.value, textarea.value);
+  }
+}
+
+async function confirmOverride(staffId, date) {
   const startEl = document.getElementById(`s_${staffId}_${date}`);
   const endEl   = document.getElementById(`e_${staffId}_${date}`);
-  await saveOverride(staffId, date, startEl.value, endEl.value, textarea.value);
+  const noteEl  = document.getElementById(`n_${staffId}_${date}`);
+
+  const btn = startEl?.closest('.time-row')?.querySelector('.confirm-btn');
+  if (btn) { btn.textContent = '…'; btn.disabled = true; }
+
+  await saveOverride(staffId, date, startEl.value, endEl.value, noteEl?.value || '');
+
+  // Replace ✓ with ✕
+  const timeRow = startEl?.closest('.time-row');
+  if (timeRow) {
+    timeRow.querySelector('.confirm-btn')?.remove();
+    if (!timeRow.querySelector('.clear-btn')) {
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'clear-btn';
+      clearBtn.title = 'Clear override';
+      clearBtn.textContent = '✕';
+      clearBtn.onclick = () => clearOverride(staffId, date);
+      timeRow.appendChild(clearBtn);
+    }
+  }
 }
 
 async function saveOverride(staffId, date, startTime, endTime, note) {
@@ -399,22 +439,10 @@ async function saveOverride(staffId, date, startTime, endTime, note) {
     const key = `${staffId}_${date}`;
     overrideMap[key] = { staff_id: staffId, date, start_time: startTime, end_time: endTime, note };
 
-    // Style inputs as overridden
     const startEl = document.getElementById(`s_${staffId}_${date}`);
     const endEl   = document.getElementById(`e_${staffId}_${date}`);
     const noteEl  = document.getElementById(`n_${staffId}_${date}`);
     [startEl, endEl, noteEl].forEach(el => { if (el) el.classList.add('has-override'); });
-
-    // Add clear button if not present
-    const timeRow = startEl?.closest('.time-row');
-    if (timeRow && !timeRow.querySelector('.clear-btn')) {
-      const btn = document.createElement('button');
-      btn.className = 'clear-btn';
-      btn.title = 'Clear override';
-      btn.textContent = '✕';
-      btn.onclick = () => clearOverride(staffId, date);
-      timeRow.appendChild(btn);
-    }
 
     flashSaved();
   } else {
@@ -443,9 +471,10 @@ async function clearOverride(staffId, date) {
     if (endEl)   { endEl.value   = endEl.dataset.default;   endEl.classList.remove('has-override'); }
     if (noteEl)  { noteEl.value  = ''; noteEl.classList.remove('has-override'); }
 
-    // Remove clear button
+    // Remove buttons
     const timeRow = startEl?.closest('.time-row');
     timeRow?.querySelector('.clear-btn')?.remove();
+    timeRow?.querySelector('.confirm-btn')?.remove();
 
     flashSaved();
   }
