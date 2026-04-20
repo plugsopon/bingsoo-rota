@@ -2,7 +2,7 @@
 Staff,,Monday,,,,,Tuesday,,,,,Wednesday,,,,,Thursday,,,,,Friday,,,,,Saturday,,,,,Sunday,,,,,
 ,,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,
 Demand,,LOW (~£1095),,,,,LOW (~£1061),,,,,LOW (~£1181),,,,,LOW (~£1028),,,,,MEDIUM (~£1473),,,,,HIGH (~£3030),,,,,HIGH (~£2148),,,,,
-Weather,,Rain:0.4mm | 13.1°C,,,,,Rain:0mm | 14.5°C,,,,,Rain:0mm | 15.7°C,,,,,Rain:0mm | 16.7°C,,,,,Rain:0mm | 16.2°C,,,,,Rain:0mm | 13.3°C,,,,,Rain:0mm | 16.8°C,,,,,
+Weather,,Rain:0.1mm | 13.2°C,,,,,Rain:0mm | 14.4°C,,,,,Rain:0mm | 15.9°C,,,,,Rain:0mm | 16.7°C,,,,,Rain:0mm | 16.2°C,,,,,Rain:0mm | 13.3°C,,,,,Rain:0mm | 16.8°C,,,,,
 
 Som,CM,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,14:00,21:30,0.5h,17:45,18:15,07:00,14:00,0.5h,10:30,11:00,07:00,21:30,1.0h,14:15,15:15,07:00,13:00,-,-,-,40.0h
 Dongjune,SV,07:00,14:00,0.5h,10:30,11:00,14:00,21:30,0.5h,17:45,18:15,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,20.5h
