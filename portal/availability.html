@@ -340,7 +340,7 @@ async function loadExisting() {
   const weekEnd = formatDate(new Date(new Date(weekStart + 'T00:00:00').setDate(new Date(weekStart + 'T00:00:00').getDate() + 6)));
 
   const { data } = await sb.from('availability')
-    .select('day, slot')
+    .select('day, slot, note')
     .eq('staff_id', staffId)
     .gte('day', weekStart)
     .lte('day', weekEnd);
