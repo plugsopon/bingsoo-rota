@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Staff — Bingsoo</title>
+<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
+<script>document.addEventListener('DOMContentLoaded',function(){if(document.documentElement.classList.contains('embedded')){document.querySelector('.topbar')?.remove();document.querySelector('.nav-links')?.remove();}});</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100vh; }
+  .topbar {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; padding: 16px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 12px rgba(102,126,234,0.4);
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar span { font-size: 13px; opacity: 0.85; }
+  .logout-btn {
+    background: rgba(255,255,255,0.2); color: white;
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; transition: background 0.2s;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.3); }
+  .container { max-width: 860px; margin: 28px auto; padding: 0 20px; }
+  .nav-links { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .nav-link {
+    background: white; color: #667eea; border: 2px solid #667eea;
+    border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .nav-link:hover, .nav-link.active { background: #667eea; color: white; }
+
+  .page-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  }
+  .page-header h2 { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+  .page-header p { font-size: 13px; color: #888; margin-top: 4px; }
+  .add-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; border-radius: 10px;
+    padding: 10px 22px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+  }
+  .add-btn:hover { opacity: 0.9; }
+
+  /* Staff cards */
+  .staff-card {
+    background: white; border-radius: 14px; padding: 16px 20px;
+    margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .staff-avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 700; flex-shrink: 0; letter-spacing: 0.5px;
+  }
+  .staff-info { flex: 1; min-width: 140px; }
+  .staff-name { font-weight: 700; font-size: 15px; color: #1a1a2e; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .manager-tag { font-size: 10px; background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 8px; font-weight: 600; }
+  .staff-email { font-size: 12px; color: #888; margin-top: 3px; }
+  .staff-meta { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; margin-top: 7px; }
+  .role-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .role-CM { background: #fce7f3; color: #9d174d; }
+  .role-SV { background: #ede9fe; color: #5b21b6; }
+  .role-CA { background: #e0f2fe; color: #075985; }
+  .visa-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; background: #f0fdf4; color: #166534; }
+  .visa-badge.restricted { background: #fef3c7; color: #92400e; }
+  .hours-tag { font-size: 12px; color: #666; font-weight: 500; }
+  .staff-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .edit-btn {
+    background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;
+    border-radius: 8px; padding: 7px 16px; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
+  .edit-btn:hover { background: #e0f2fe; }
+  .del-btn {
+    background: #fff1f2; color: #be123c; border: 1px solid #fecdd3;
+    border-radius: 8px; padding: 7px 16px; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
+  .del-btn:hover { background: #ffe4e6; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px;
+  }
+  .modal-box {
+    background: white; border-radius: 18px; padding: 28px;
+    width: 100%; max-width: 460px; max-height: 92vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-title { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 22px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 5px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 10px 13px; border: 2px solid #e5e7eb;
+    border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: #667eea; }
+  .form-group input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
+  .form-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+  .form-row { display: flex; gap: 12px; }
+  .form-row .form-group { flex: 1; }
+  .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: #444; }
+  .checkbox-label input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .save-btn {
+    flex: 1; background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; border-radius: 10px;
+    padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .cancel-btn {
+    flex: 1; background: #f3f4f6; color: #374151; border: none;
+    border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .divider { border: none; border-top: 1px solid #f0f0f0; margin: 16px 0; }
+
+  /* Confirm dialog */
+  .confirm-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 1001; padding: 16px;
+  }
+  .confirm-box {
+    background: white; border-radius: 16px; padding: 28px 24px;
+    max-width: 340px; width: 100%; text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  }
+  .confirm-icon { font-size: 36px; margin-bottom: 10px; }
+  .confirm-box h3 { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+  .confirm-box p { font-size: 13px; color: #666; margin-bottom: 22px; line-height: 1.5; }
+  .confirm-actions { display: flex; gap: 10px; }
+  .confirm-del { flex: 1; background: #dc2626; color: white; border: none; border-radius: 9px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .confirm-del:disabled { opacity: 0.5; }
+  .confirm-cancel { flex: 1; background: #f3f4f6; color: #374151; border: none; border-radius: 9px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a1a2e; color: white; padding: 12px 24px;
+    border-radius: 12px; font-size: 14px; font-weight: 500;
+    transition: transform 0.3s ease; z-index: 9999; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: #065f46; }
+  .toast.error { background: #991b1b; }
+
+  .empty-state { background: white; border-radius: 14px; padding: 48px; text-align: center; color: #888; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+  @media (max-width: 600px) {
+    .container { padding: 0 12px; margin: 16px auto; }
+    .staff-card { padding: 12px 14px; gap: 10px; }
+    .staff-avatar { width: 40px; height: 40px; font-size: 15px; }
+    .modal-box { padding: 20px; }
+    .form-row { flex-direction: column; gap: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>🍧 Bingsoo Staff Portal</h1>
+    <span id="topbar-name">Loading...</span>
+  </div>
+  <button class="logout-btn" onclick="logout()">Sign Out</button>
+</div>
+
+<div class="container">
+  <div class="nav-links">
+    <a href="../index.html" class="nav-link">📊 Rota Dashboard</a>
+    <a href="availability.html" class="nav-link">📅 My Availability</a>
+    <a href="schedule.html" class="nav-link">🗓 My Schedule</a>
+    <a href="manager.html" class="nav-link">👥 All Staff</a>
+    <a href="staff-manage.html" class="nav-link active">⚙️ Manage Staff</a>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <h2>⚙️ Manage Staff</h2>
+      <p>เพิ่ม แก้ไข หรือลบพนักงาน และตั้งค่าตำแหน่ง / วีซ่า</p>
+    </div>
+    <button class="add-btn" onclick="openAddModal()">+ Add Staff</button>
+  </div>
+
+  <div id="staff-list"><div class="empty-state"><div class="empty-icon">⏳</div><div>Loading staff...</div></div></div>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="handleOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Add Staff Member</div>
+
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="f-name" placeholder="e.g. Kim Jisoo" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label>Email Address *</label>
+      <input type="email" id="f-email" placeholder="e.g. kim@bingsoo.cafe" autocomplete="off">
+      <div class="form-hint" id="email-hint">พนักงานจะใช้ email นี้ login</div>
+    </div>
+
+    <div class="form-group" id="pw-group">
+      <label>Temporary Password *</label>
+      <input type="password" id="f-password" placeholder="Minimum 6 characters" autocomplete="new-password">
+      <div class="form-hint">พนักงานสามารถเปลี่ยนรหัสผ่านได้ทีหลัง</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>ตำแหน่ง (Role)</label>
+        <select id="f-role">
+          <option value="CA">Assistant (CA)</option>
+          <option value="SV">Supervisor (SV)</option>
+          <option value="CM">Cafe Manager (CM)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>สัญญาชั่วโมง/สัปดาห์</label>
+        <input type="number" id="f-hours" min="1" max="48" value="40">
+        <div class="form-hint" id="hours-hint">Auto จากประเภทวีซ่า</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>ประเภทวีซ่า</label>
+      <select id="f-visa" onchange="onVisaChange()">
+        <option value="British/Settled">🇬🇧 British / Settled Status</option>
+        <option value="Student Visa">🎓 Student Visa — จำกัด 20h/สัปดาห์</option>
+        <option value="Graduate Visa">🎓 Graduate Visa</option>
+        <option value="Skilled Worker">💼 Skilled Worker Visa</option>
+        <option value="Holiday/Other">✈️ Holiday / Other — จำกัด 20h/สัปดาห์</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="f-manager">
+        <span>Manager access (สามารถดู All Staff และ generate ROTA ได้)</span>
+      </label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="save-btn" id="save-btn" onclick="saveStaff()">Add Staff Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm -->
+<div class="confirm-overlay" id="confirm-modal" style="display:none">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <h3>Remove Staff Member?</h3>
+    <p id="confirm-text">Are you sure?</p>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-del" id="confirm-del-btn" onclick="confirmDelete()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Visa type → suggested contract hours
+const VISA_HOURS = {
+  'British/Settled': 40,
+  'Student Visa': 20,
+  'Graduate Visa': 40,
+  'Skilled Worker': 40,
+  'Holiday/Other': 20,
+};
+const VISA_RESTRICTED = new Set(['Student Visa', 'Holiday/Other']);
+
+let editingId = null;
+let deletingId = null;
+let allStaff = [];
+
+// ── Visa change → auto-fill hours ──────────────────────────────
+function onVisaChange() {
+  const visa = document.getElementById('f-visa').value;
+  const h = VISA_HOURS[visa] ?? 40;
+  document.getElementById('f-hours').value = h;
+  document.getElementById('hours-hint').textContent =
+    VISA_RESTRICTED.has(visa) ? `⚠️ วีซ่านี้ทำงานได้สูงสุด ${h}h/สัปดาห์` : 'Auto จากประเภทวีซ่า';
+}
+
+// ── Load & render ───────────────────────────────────────────────
+async function loadStaff() {
+  const { data, error } = await sb.rpc('get_all_staff_for_manage');
+  if (error) {
+    document.getElementById('staff-list').innerHTML =
+      `<div class="empty-state"><div class="empty-icon">❌</div>
+       <div style="font-weight:600;margin-bottom:8px">ยังไม่ได้รัน SQL Setup</div>
+       <div style="font-size:13px">กรุณา copy SQL จาก staff-manage-setup.sql แล้วรันใน Supabase SQL Editor</div></div>`;
+    return;
+  }
+  allStaff = data || [];
+  renderStaff(allStaff);
+}
+
+function renderStaff(staff) {
+  const el = document.getElementById('staff-list');
+  if (!staff.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div>ยังไม่มีพนักงาน กด "+ Add Staff" เพื่อเพิ่ม</div></div>`;
+    return;
+  }
+  el.innerHTML = staff.map(s => {
+    const initials = s.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    const restricted = VISA_RESTRICTED.has(s.visa_type);
+    const visaLabel = (s.visa_type || 'British/Settled').replace(' — จำกัด 20h/สัปดาห์', '');
+    return `<div class="staff-card">
+      <div class="staff-avatar">${initials}</div>
+      <div class="staff-info">
+        <div class="staff-name">
+          ${s.name}
+          ${s.is_manager ? '<span class="manager-tag">MANAGER</span>' : ''}
+        </div>
+        <div class="staff-email">${s.email || '—'}</div>
+        <div class="staff-meta">
+          <span class="role-badge role-${s.role}">${s.role}</span>
+          <span class="visa-badge ${restricted ? 'restricted' : ''}">${visaLabel}</span>
+          <span class="hours-tag">⏱ ${s.contract_hours}h/week</span>
+        </div>
+      </div>
+      <div class="staff-actions">
+        <button class="edit-btn" onclick="openEditModal('${s.id}')">✏️ Edit</button>
+        <button class="del-btn" onclick="openConfirm('${s.id}','${s.name.replace(/'/g,"\\'")}')">🗑 Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Modal: open/close ───────────────────────────────────────────
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = '➕ Add Staff Member';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-email').value = '';
+  document.getElementById('f-email').disabled = false;
+  document.getElementById('email-hint').textContent = 'พนักงานจะใช้ email นี้ login';
+  document.getElementById('f-password').value = '';
+  document.getElementById('pw-group').style.display = 'block';
+  document.getElementById('f-role').value = 'CA';
+  document.getElementById('f-visa').value = 'British/Settled';
+  document.getElementById('f-hours').value = 40;
+  document.getElementById('f-manager').checked = false;
+  document.getElementById('hours-hint').textContent = 'Auto จากประเภทวีซ่า';
+  document.getElementById('save-btn').textContent = 'Add Staff Member';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function openEditModal(staffId) {
+  const s = allStaff.find(x => x.id === staffId);
+  if (!s) return;
+  editingId = staffId;
+  document.getElementById('modal-title').textContent = `✏️ Edit — ${s.name}`;
+  document.getElementById('f-name').value = s.name;
+  document.getElementById('f-email').value = s.email || '';
+  document.getElementById('f-email').disabled = true;
+  document.getElementById('email-hint').textContent = 'ไม่สามารถเปลี่ยน email ได้หลังสร้างแล้ว';
+  document.getElementById('pw-group').style.display = 'none';
+  document.getElementById('f-role').value = s.role;
+  document.getElementById('f-visa').value = s.visa_type || 'British/Settled';
+  document.getElementById('f-hours').value = s.contract_hours;
+  document.getElementById('f-manager').checked = s.is_manager;
+  const restricted = VISA_RESTRICTED.has(s.visa_type);
+  document.getElementById('hours-hint').textContent = restricted
+    ? `⚠️ วีซ่านี้ทำงานได้สูงสุด ${VISA_HOURS[s.visa_type]}h/สัปดาห์`
+    : 'Auto จากประเภทวีซ่า';
+  document.getElementById('save-btn').textContent = 'Save Changes';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function handleOverlayClick(e) { if (e.target.id === 'modal') closeModal(); }
+
+// ── Save (add or edit) ──────────────────────────────────────────
+async function saveStaff() {
+  const name     = document.getElementById('f-name').value.trim();
+  const email    = document.getElementById('f-email').value.trim().toLowerCase();
+  const password = document.getElementById('f-password').value;
+  const role     = document.getElementById('f-role').value;
+  const visa     = document.getElementById('f-visa').value;
+  const hours    = parseInt(document.getElementById('f-hours').value) || 20;
+  const isMgr    = document.getElementById('f-manager').checked;
+
+  if (!name)                        { showToast('กรุณาใส่ชื่อพนักงาน', 'error'); return; }
+  if (!editingId && !email)         { showToast('กรุณาใส่ email', 'error'); return; }
+  if (!editingId && password.length < 6) { showToast('Password ต้องมีอย่างน้อย 6 ตัวอักษร', 'error'); return; }
+  if (VISA_RESTRICTED.has(visa) && hours > VISA_HOURS[visa]) {
+    showToast(`⚠️ วีซ่านี้ทำงานได้สูงสุด ${VISA_HOURS[visa]}h/สัปดาห์`, 'error'); return;
+  }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    let staffId = editingId;
+
+    if (!editingId) {
+      // Create Supabase auth account
+      const { data: authData, error: authErr } = await sb.auth.signUp({ email, password });
+      if (authErr) throw new Error(authErr.message);
+      if (!authData?.user?.id) throw new Error('ไม่สามารถสร้าง account ได้');
+      staffId = authData.user.id;
+    }
+
+    // Upsert staff record via RPC
+    const { error: rpcErr } = await sb.rpc('upsert_staff_member', {
+      p_id: staffId,
+      p_name: name,
+      p_email: editingId ? null : email,
+      p_role: role,
+      p_visa_type: visa,
+      p_contract_hours: hours,
+      p_is_manager: isMgr,
+    });
+    if (rpcErr) throw new Error(rpcErr.message);
+
+    showToast(editingId ? `✅ อัพเดต ${name} แล้ว` : `✅ เพิ่ม ${name} แล้ว`, 'success');
+    closeModal();
+    await loadStaff();
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editingId ? 'Save Changes' : 'Add Staff Member';
+  }
+}
+
+// ── Delete ──────────────────────────────────────────────────────
+function openConfirm(staffId, name) {
+  deletingId = staffId;
+  document.getElementById('confirm-text').textContent =
+    `ลบ "${name}" ออกจากระบบ? Account login จะถูก deactivate`;
+  document.getElementById('confirm-modal').style.display = 'flex';
+}
+function closeConfirm() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  deletingId = null;
+}
+async function confirmDelete() {
+  if (!deletingId) return;
+  const btn = document.getElementById('confirm-del-btn');
+  btn.disabled = true; btn.textContent = 'Removing...';
+  const { error } = await sb.rpc('remove_staff_member', { p_staff_id: deletingId });
+  if (error) {
+    showToast('Error: ' + error.message, 'error');
+  } else {
+    showToast('✅ ลบพนักงานแล้ว', 'success');
+    closeConfirm();
+    await loadStaff();
+  }
+  btn.disabled = false; btn.textContent = 'Remove';
+}
+
+// ── Toast ───────────────────────────────────────────────────────
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+async function logout() { await sb.auth.signOut(); window.location.href = 'login.html'; }
+
+// ── Init ────────────────────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  const { data: profileArr } = await sb.rpc('get_my_profile');
+  const profile = profileArr?.[0];
+  if (!profile?.is_manager) { window.location.href = 'availability.html'; return; }
+
+  const tn = document.getElementById('topbar-name');
+  if (tn) tn.textContent = profile.name;
+
+  await loadStaff();
+}
+
+init();
+</script>
+</body>
+</html>

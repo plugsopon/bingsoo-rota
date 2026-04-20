@@ -85,6 +85,7 @@
       <span class="nav-btn" onclick="loadPage('portal/availability.html',this)">📅 My Availability</span>
       <span class="nav-btn" onclick="loadPage('portal/schedule.html',this)">🗓 My Schedule</span>
       <span class="nav-btn" id="all-staff-btn" style="display:none" onclick="loadPage('portal/manager.html',this)">👥 All Staff</span>
+      <span class="nav-btn" id="manage-staff-btn" style="display:none" onclick="loadPage('portal/staff-manage.html',this)">⚙️ Manage Staff</span>
       <span class="user-name" id="user-name"></span>
       <button class="signout-btn" onclick="signOut()">Sign Out</button>
     </div>
@@ -179,7 +180,10 @@ async function init() {
   const { data: profileArr } = await sb.rpc('get_my_profile');
   const profile = profileArr?.[0];
   document.getElementById('user-name').textContent = profile?.name || session.user.email;
-  if (profile?.is_manager) document.getElementById('all-staff-btn').style.display = 'inline-flex';
+  if (profile?.is_manager) {
+    document.getElementById('all-staff-btn').style.display = 'inline-flex';
+    document.getElementById('manage-staff-btn').style.display = 'inline-flex';
+  }
 
   document.getElementById('app').style.display = 'flex';
 }

@@ -152,6 +152,7 @@
     <a href="availability.html" class="nav-link">📅 My Availability</a>
     <a href="schedule.html" class="nav-link active">🗓 My Schedule</a>
     <a href="manager.html" class="nav-link" id="manager-link" style="display:none">👥 All Staff</a>
+    <a href="staff-manage.html" class="nav-link" id="staff-manage-link" style="display:none">⚙️ Manage Staff</a>
   </div>
 
   <div class="week-selector">
@@ -313,6 +314,8 @@ async function init() {
   if (staff?.contract_hours) contractHours = staff.contract_hours;
   const managerLink = document.getElementById('manager-link');
   if (staff?.is_manager && managerLink) managerLink.style.display = 'inline-flex';
+  const staffMgmtLink = document.getElementById('staff-manage-link');
+  if (staff?.is_manager && staffMgmtLink) staffMgmtLink.style.display = 'inline-flex';
 
   populateWeeks();
   await loadSchedule();

@@ -211,6 +211,7 @@
     <a href="availability.html" class="nav-link active">📅 My Availability</a>
     <a href="schedule.html" class="nav-link">🗓 My Schedule</a>
     <a href="manager.html" class="nav-link" id="manager-link" style="display:none">👥 All Staff</a>
+    <a href="staff-manage.html" class="nav-link" id="staff-manage-link" style="display:none">⚙️ Manage Staff</a>
   </div>
 
   <p class="greeting" id="greeting">Hi there!</p>
@@ -397,6 +398,8 @@ async function init() {
   document.getElementById('greeting').textContent = `Hi ${staff?.name || 'there'}! 👋`;
   const managerLink = document.getElementById('manager-link');
   if (staff?.is_manager && managerLink) managerLink.style.display = 'inline-flex';
+  const staffMgmtLink = document.getElementById('staff-manage-link');
+  if (staff?.is_manager && staffMgmtLink) staffMgmtLink.style.display = 'inline-flex';
 
   populateWeeks();
   await loadExisting();
