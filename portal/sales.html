@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Dashboard — Bingsoo</title>
+<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100vh; }
+
+.topbar { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+.topbar h1 { font-size: 17px; font-weight: 700; }
+.logout-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+.logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+.nav-links { display: flex; gap: 10px; padding: 14px 24px 0; flex-wrap: wrap; }
+.nav-link { background: white; color: #667eea; border: 2px solid #667eea; border-radius: 10px; padding: 7px 16px; font-size: 13px; font-weight: 600; text-decoration: none; }
+.nav-link.active { background: #667eea; color: white; }
+.nav-link:hover:not(.active) { background: #f0f0ff; }
+
+.container { max-width: 1100px; margin: 20px auto; padding: 0 24px 32px; }
+
+/* Upload bar */
+.upload-bar { background: white; border-radius: 14px; padding: 16px 20px; margin-bottom: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.upload-bar h3 { font-size: 14px; font-weight: 700; color: #333; flex: 1; }
+.upload-info { font-size: 12px; color: #888; }
+.upload-label { background: #667eea; color: white; border: none; border-radius: 10px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.upload-label:hover { background: #5a6fd6; }
+#csv-input { display: none; }
+.upload-status { font-size: 12px; font-weight: 600; }
+.upload-status.ok { color: #22c55e; }
+.upload-status.err { color: #ef4444; }
+
+/* Month selector */
+.toolbar { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+.toolbar label { font-weight: 600; color: #555; font-size: 14px; }
+.month-select { padding: 8px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; outline: none; cursor: pointer; }
+.month-select:focus { border-color: #667eea; }
+
+/* Stat cards */
+.stats-row { display: flex; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+.stat-card { background: white; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 140px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.stat-num { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+.stat-num.green { color: #22c55e; }
+.stat-num.amber { color: #f59e0b; }
+.stat-label { font-size: 11px; color: #888; margin-top: 4px; }
+.stat-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+/* Day-of-week chart */
+.card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 18px; }
+.card h2 { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
+
+.dow-chart { display: flex; align-items: flex-end; gap: 10px; height: 140px; padding: 0 4px; }
+.dow-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.dow-bar-wrap { flex: 1; display: flex; align-items: flex-end; width: 100%; }
+.dow-bar { width: 100%; border-radius: 6px 6px 0 0; transition: height 0.4s ease; min-height: 4px; position: relative; }
+.dow-bar.weekend { background: linear-gradient(180deg, #f59e0b, #d97706); }
+.dow-bar.weekday { background: linear-gradient(180deg, #667eea, #5a6fd6); }
+.dow-label { font-size: 11px; color: #888; font-weight: 600; }
+.dow-val { font-size: 10px; color: #555; font-weight: 700; white-space: nowrap; }
+
+/* Sales table */
+.sales-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sales-table th { background: #f8f9ff; padding: 10px 12px; text-align: left; font-weight: 700; color: #555; font-size: 12px; border-bottom: 2px solid #e8ebff; position: sticky; top: 0; }
+.sales-table td { padding: 9px 12px; border-bottom: 1px solid #f3f4f6; color: #333; }
+.sales-table tr:hover td { background: #f8f9ff; }
+.sales-table tr.weekend td { background: #fffbeb; }
+.sales-table tr.weekend:hover td { background: #fef3c7; }
+.day-badge { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+.day-badge.we { background: #fef3c7; color: #b45309; }
+.day-badge.wd { background: #e8ebff; color: #4338ca; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.total-strong { font-weight: 700; color: #1a1a2e; }
+.week-total-row td { background: #f0f0ff; font-weight: 700; font-size: 12px; color: #667eea; border-top: 2px solid #e0e4ff; }
+.loading { color: #aaa; font-size: 14px; padding: 20px; text-align: center; }
+
+@media (max-width: 700px) {
+  .container { padding: 0 14px 24px; }
+  .stats-row { gap: 10px; }
+  .stat-card { min-width: 100px; }
+  .stat-num { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>💰 Sales Dashboard — Bingsoo</h1>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="font-size:13px;opacity:0.7" id="topbar-name"></span>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+
+<div class="nav-links">
+  <a href="../index.html" class="nav-link">📊 Rota Dashboard</a>
+  <a href="availability.html" class="nav-link">📅 My Availability</a>
+  <a href="schedule.html" class="nav-link">🗓 My Schedule</a>
+  <a href="manager.html" class="nav-link">👥 All Staff</a>
+  <a href="staff-manage.html" class="nav-link">⚙️ Manage Staff</a>
+  <a href="rota-ai.html" class="nav-link">🤖 AI Assistant</a>
+  <a href="sales.html" class="nav-link active">💰 Sales</a>
+</div>
+
+<div class="container">
+
+  <!-- Upload bar -->
+  <div class="upload-bar">
+    <h3>📤 Import Sales CSV</h3>
+    <div class="upload-info">Upload the monthly "[CAKE&BINGSOO] Daily Sales..." CSV file</div>
+    <label class="upload-label" for="csv-input">📂 Upload CSV</label>
+    <input type="file" id="csv-input" accept=".csv" onchange="handleUpload(event)">
+    <span class="upload-status" id="upload-status"></span>
+  </div>
+
+  <!-- Month selector + toolbar -->
+  <div class="toolbar">
+    <label>Month:</label>
+    <select class="month-select" id="month-select" onchange="loadMonth()"></select>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-num" id="s-total">–</div><div class="stat-label">Monthly Total</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-avg">–</div><div class="stat-label">Avg Daily</div><div class="stat-sub" id="s-days"></div></div>
+    <div class="stat-card"><div class="stat-num green" id="s-best">–</div><div class="stat-label">Best Day</div><div class="stat-sub" id="s-best-date"></div></div>
+    <div class="stat-card"><div class="stat-num amber" id="s-quiet">–</div><div class="stat-label">Quietest Day</div><div class="stat-sub" id="s-quiet-date"></div></div>
+    <div class="stat-card"><div class="stat-num" id="s-delivery">–</div><div class="stat-label">Delivery %</div><div class="stat-sub">of total sales</div></div>
+  </div>
+
+  <!-- Day-of-week pattern -->
+  <div class="card">
+    <h2>📈 Average Sales by Day of Week <span style="font-size:12px;color:#aaa;font-weight:400">(all-time from database)</span></h2>
+    <div class="dow-chart" id="dow-chart"><div class="loading">Loading…</div></div>
+    <div style="margin-top:10px;font-size:12px;color:#aaa;text-align:center">Based on all historical data in database · Weekend = Saturday & Sunday</div>
+  </div>
+
+  <!-- Daily table -->
+  <div class="card">
+    <h2>📋 Daily Sales</h2>
+    <div id="table-wrap"><div class="loading">Loading…</div></div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function fmt(n) {
+  if (n == null || n === 0) return '–';
+  return '£' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtShort(n) {
+  if (!n) return '£0';
+  return '£' + (n >= 1000 ? (n/1000).toFixed(1) + 'k' : Number(n).toFixed(0));
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function logout() { await sb.auth.signOut(); window.location.href = 'login.html'; }
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+  const { data: profileArr } = await sb.rpc('get_my_profile');
+  const staff = profileArr?.[0];
+  if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
+  document.getElementById('topbar-name').textContent = staff.name;
+
+  populateMonths();
+  await Promise.all([loadMonth(), loadDowChart()]);
+}
+
+// ── Month selector ────────────────────────────────────────────────────────
+function populateMonths() {
+  const sel = document.getElementById('month-select');
+  const now = new Date();
+  // Show last 12 months
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const opt = document.createElement('option');
+    opt.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    opt.textContent = `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    sel.appendChild(opt);
+  }
+}
+
+// ── Load month data ───────────────────────────────────────────────────────
+async function loadMonth() {
+  const ym = document.getElementById('month-select').value;
+  const [year, month] = ym.split('-').map(Number);
+  const start = `${year}-${String(month).padStart(2,'0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${year}-${String(month).padStart(2,'0')}-${lastDay}`;
+
+  document.getElementById('table-wrap').innerHTML = '<div class="loading">Loading…</div>';
+
+  const { data, error } = await sb.from('sales')
+    .select('date, eat_in_gross, eat_in_net, ubereats, deliveroo, delivery_total, daily_total')
+    .gte('date', start).lte('date', end)
+    .order('date');
+
+  if (error || !data?.length) {
+    document.getElementById('table-wrap').innerHTML = '<div class="loading">No data for this month</div>';
+    document.getElementById('s-total').textContent = '–';
+    document.getElementById('s-avg').textContent = '–';
+    document.getElementById('s-best').textContent = '–';
+    document.getElementById('s-quiet').textContent = '–';
+    document.getElementById('s-delivery').textContent = '–';
+    return;
+  }
+
+  renderStats(data);
+  renderTable(data);
+}
+
+function renderStats(data) {
+  const total = data.reduce((s, r) => s + (r.daily_total || 0), 0);
+  const avg = total / data.length;
+  const best = data.reduce((a, b) => (b.daily_total||0) > (a.daily_total||0) ? b : a);
+  const quiet = data.reduce((a, b) => (b.daily_total||0) < (a.daily_total||0) ? b : a);
+  const delTotal = data.reduce((s, r) => s + (r.delivery_total || 0), 0);
+  const delPct = total > 0 ? (delTotal / total * 100).toFixed(1) : 0;
+
+  document.getElementById('s-total').textContent = fmt(total);
+  document.getElementById('s-avg').textContent = fmt(avg);
+  document.getElementById('s-days').textContent = `${data.length} trading days`;
+  document.getElementById('s-best').textContent = fmt(best.daily_total);
+  document.getElementById('s-best-date').textContent = fmtDate(best.date);
+  document.getElementById('s-quiet').textContent = fmt(quiet.daily_total);
+  document.getElementById('s-quiet-date').textContent = fmtDate(quiet.date);
+  document.getElementById('s-delivery').textContent = delPct + '%';
+}
+
+function fmtDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function renderTable(data) {
+  let html = `<div style="overflow-x:auto"><table class="sales-table">
+    <thead><tr>
+      <th>Date</th><th>Day</th>
+      <th class="num">Eat-in (Gross)</th>
+      <th class="num">Eat-in (Net)</th>
+      <th class="num">UberEats</th>
+      <th class="num">Deliveroo</th>
+      <th class="num">Delivery Total</th>
+      <th class="num">Daily Total</th>
+    </tr></thead><tbody>`;
+
+  let weekTotal = 0, weekStart = null;
+
+  data.forEach((row, i) => {
+    const d = new Date(row.date + 'T00:00:00');
+    const dow = d.getDay(); // 0=Sun, 6=Sat
+    const isWE = dow === 0 || dow === 6;
+    const dayName = DAYS[dow];
+    const isMonday = dow === 1;
+
+    // Insert week total row before Monday (except first row)
+    if (isMonday && i > 0) {
+      html += `<tr class="week-total-row"><td colspan="7" style="padding-left:16px">📅 Week ending ${fmtDate(data[i-1].date)}</td><td class="num">${fmt(weekTotal)}</td></tr>`;
+      weekTotal = 0;
+    }
+
+    weekTotal += row.daily_total || 0;
+
+    html += `<tr class="${isWE ? 'weekend' : ''}">
+      <td>${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+      <td><span class="day-badge ${isWE ? 'we' : 'wd'}">${dayName}</span></td>
+      <td class="num">${fmt(row.eat_in_gross)}</td>
+      <td class="num">${fmt(row.eat_in_net)}</td>
+      <td class="num">${fmt(row.ubereats)}</td>
+      <td class="num">${fmt(row.deliveroo)}</td>
+      <td class="num">${fmt(row.delivery_total)}</td>
+      <td class="num total-strong">${fmt(row.daily_total)}</td>
+    </tr>`;
+  });
+
+  // Final week total
+  if (weekTotal > 0) {
+    html += `<tr class="week-total-row"><td colspan="7" style="padding-left:16px">📅 Week ending ${fmtDate(data[data.length-1].date)}</td><td class="num">${fmt(weekTotal)}</td></tr>`;
+  }
+
+  html += '</tbody></table></div>';
+  document.getElementById('table-wrap').innerHTML = html;
+}
+
+// ── Day-of-week chart (all-time averages) ─────────────────────────────────
+async function loadDowChart() {
+  const { data, error } = await sb.from('sales')
+    .select('date, daily_total')
+    .gt('daily_total', 0);
+
+  if (error || !data?.length) {
+    document.getElementById('dow-chart').innerHTML = '<div class="loading">No data yet</div>';
+    return;
+  }
+
+  // Group by day of week
+  const totals = [0,0,0,0,0,0,0];
+  const counts = [0,0,0,0,0,0,0];
+  data.forEach(r => {
+    const dow = new Date(r.date + 'T00:00:00').getDay();
+    totals[dow] += r.daily_total || 0;
+    counts[dow]++;
+  });
+  const avgs = totals.map((t, i) => counts[i] > 0 ? t / counts[i] : 0);
+  const maxAvg = Math.max(...avgs);
+
+  // Render Mon→Sun order
+  const ORDER = [1,2,3,4,5,6,0];
+  const LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  const chartEl = document.getElementById('dow-chart');
+  chartEl.innerHTML = ORDER.map((dow, i) => {
+    const avg = avgs[dow];
+    const heightPct = maxAvg > 0 ? (avg / maxAvg * 100) : 0;
+    const isWE = dow === 0 || dow === 6;
+    return `<div class="dow-col">
+      <div class="dow-val">${avg > 0 ? fmtShort(avg) : '–'}</div>
+      <div class="dow-bar-wrap">
+        <div class="dow-bar ${isWE ? 'weekend' : 'weekday'}" style="height:${heightPct}%"></div>
+      </div>
+      <div class="dow-label">${LABELS[i]}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── CSV Upload ────────────────────────────────────────────────────────────
+async function handleUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('upload-status');
+  status.textContent = '⏳ Parsing…';
+  status.className = 'upload-status';
+
+  try {
+    const text = await file.text();
+    const rows = parseSalesCSV(text);
+
+    if (!rows.length) {
+      status.textContent = '❌ No valid data found in CSV';
+      status.className = 'upload-status err';
+      return;
+    }
+
+    status.textContent = `⏳ Uploading ${rows.length} days…`;
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+
+    // Upsert via Supabase JS (uses authenticated session)
+    const { error } = await sb.from('sales').upsert(rows, { onConflict: 'date' });
+
+    if (error) throw new Error(error.message);
+
+    status.textContent = `✅ Imported ${rows.length} days`;
+    status.className = 'upload-status ok';
+
+    // Refresh charts
+    await Promise.all([loadMonth(), loadDowChart()]);
+
+  } catch (err) {
+    status.textContent = `❌ ${err.message}`;
+    status.className = 'upload-status err';
+  }
+
+  // Reset file input so same file can be re-uploaded
+  event.target.value = '';
+}
+
+function parseNum(val) {
+  if (!val) return 0;
+  const n = parseFloat(val.replace(/,/g, '').replace('%', '').trim());
+  return isNaN(n) ? 0 : n;
+}
+
+function parseDate(val) {
+  val = (val || '').trim();
+  const m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (!m) return null;
+  let [_, d, mo, y] = m;
+  if (y.length === 2) y = '20' + y;
+  return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+}
+
+function parseSalesCSV(text) {
+  const lines = text.split('\n');
+  const rows = [];
+
+  for (const line of lines) {
+    // Parse CSV line respecting quoted fields
+    const cols = [];
+    let cur = '', inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    cols.push(cur);
+
+    if (cols.length < 14) continue;
+    const date = parseDate(cols[1]);
+    if (!date) continue;
+
+    const eat_in_gross   = parseNum(cols[4]);
+    const eat_in_vat     = parseNum(cols[5]);
+    const eat_in_net     = parseNum(cols[6]);
+    const ubereats       = parseNum(cols[7]);
+    const deliveroo      = parseNum(cols[9]);
+    const delivery_comm  = parseNum(cols[10]);
+    const delivery_total = parseNum(cols[11]);
+    const daily_total    = parseNum(cols[13]);
+
+    if (eat_in_gross === 0 && daily_total === 0) continue;
+
+    rows.push({ date, eat_in_gross, eat_in_vat, eat_in_net, ubereats, deliveroo, delivery_comm, delivery_total, daily_total });
+  }
+  return rows;
+}
+
+init();
+</script>
+</body>
+</html>

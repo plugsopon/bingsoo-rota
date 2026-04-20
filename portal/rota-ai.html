@@ -283,9 +283,13 @@ async function loadContext() {
     const dates   = DAYS.map((_, i) => fmtDate(new Date(d.getTime() + i*86400000)));
     const weekLabel = `${fmtShort(d)} – ${fmtShort(new Date(d.getTime() + 6*86400000))}`;
 
-    const [staffRes, availRes] = await Promise.all([
+    // Also load sales: last 12 weeks for historical patterns
+    const salesLookback = fmtDate(new Date(d.getTime() - 84*86400000)); // 12 weeks back
+
+    const [staffRes, availRes, salesRes] = await Promise.all([
       sb.from('staff').select('id, name, role, contract_hours, visa_type').order('name'),
-      sb.from('availability').select('staff_id, day, slot, note').gte('day', weekStart).lte('day', weekEnd)
+      sb.from('availability').select('staff_id, day, slot, note').gte('day', weekStart).lte('day', weekEnd),
+      sb.from('sales').select('date, daily_total, eat_in_net, delivery_total').gte('date', salesLookback).lte('date', weekEnd).gt('daily_total', 0)
     ]);
 
     const allStaff = (staffRes.data || []).sort((a,b) =>
@@ -299,6 +303,22 @@ async function loadContext() {
       if (!availMap[a.staff_id]) availMap[a.staff_id] = {};
       availMap[a.staff_id][a.day] = { slot: a.slot, note: a.note };
     });
+
+    // ── Sales data analysis ────────────────────────────────────────────
+    const allSales = salesRes?.data || [];
+    // Day-of-week averages (0=Sun..6=Sat)
+    const dowTotals = [0,0,0,0,0,0,0], dowCounts = [0,0,0,0,0,0,0];
+    const thisWeekSales = {};
+    allSales.forEach(r => {
+      const rd = new Date(r.date + 'T00:00:00');
+      const dow = rd.getDay();
+      dowTotals[dow] += r.daily_total || 0;
+      dowCounts[dow]++;
+      // Check if it's in this week (same dates)
+      if (dates.includes(r.date)) thisWeekSales[r.date] = r.daily_total;
+    });
+    const dowAvg = dowTotals.map((t, i) => dowCounts[i] > 0 ? Math.round(t / dowCounts[i]) : null);
+    const DAYS_SUN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
     // ── Build system prompt ────────────────────────────────────────────
     let prompt = `You are an AI assistant helping Som (the cafe manager) create and review the weekly staff ROTA at Bingsoo Cafe, a dessert cafe in the UK.
@@ -330,6 +350,17 @@ Dates: ${dates.map((d,i) => `${DAYS[i]} ${d}`).join(', ')}
     });
 
     prompt += `
+## Historical Sales (last 12 weeks average by day of week)
+${dowAvg[1] != null ? `- Monday avg: £${dowAvg[1].toLocaleString()}` : '- Monday: no data'}
+${dowAvg[2] != null ? `- Tuesday avg: £${dowAvg[2].toLocaleString()}` : '- Tuesday: no data'}
+${dowAvg[3] != null ? `- Wednesday avg: £${dowAvg[3].toLocaleString()}` : '- Wednesday: no data'}
+${dowAvg[4] != null ? `- Thursday avg: £${dowAvg[4].toLocaleString()}` : '- Thursday: no data'}
+${dowAvg[5] != null ? `- Friday avg: £${dowAvg[5].toLocaleString()}` : '- Friday: no data'}
+${dowAvg[6] != null ? `- Saturday avg: £${dowAvg[6].toLocaleString()} ← typically busiest` : '- Saturday: no data'}
+${dowAvg[0] != null ? `- Sunday avg: £${dowAvg[0].toLocaleString()}` : '- Sunday: no data'}
+${Object.keys(thisWeekSales).length > 0 ? `\nActual sales so far this week:\n${dates.map((date,i) => thisWeekSales[date] ? `- ${DAYS[i]}: £${thisWeekSales[date].toLocaleString()}` : '').filter(Boolean).join('\n')}` : ''}
+Use this sales data to guide staffing levels — higher-revenue days need more staff coverage.
+
 ## Scheduling rules
 - Typical shift types: Morning (open, ~9am start), Mid, Evening (close, ~9-10pm finish)
 - Minimum 2 staff per shift for safety; 3+ on busy weekend days is ideal
@@ -366,7 +397,8 @@ Always explain your reasoning and flag potential issues.`;
     }).join('');
     miniEl.style.display = 'block';
 
-    status.textContent = `✅ ${allStaff.length} staff · ${submitted} submitted`;
+    const salesDays = allSales.length;
+    status.textContent = `✅ ${allStaff.length} staff · ${submitted} submitted · ${salesDays} sales days loaded`;
     status.className   = 'ctx-status loaded';
     document.getElementById('no-ctx-warn').classList.remove('show');
 
