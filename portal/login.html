@@ -127,9 +127,8 @@ async function login() {
 }
 
 async function redirect() {
-  const { data } = await sb.rpc('get_my_profile');
-  const profile = data?.[0];
-  window.location.href = profile?.is_manager ? '../index.html' : 'availability.html';
+  // Always go to index.html — it handles permissions and shows the right page
+  window.location.href = '../index.html';
 }
 
 document.getElementById('password').addEventListener('keydown', e => {
