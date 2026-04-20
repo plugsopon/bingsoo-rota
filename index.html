@@ -81,9 +81,9 @@
       <div class="sub">📁 4 weeks available</div>
     </div>
     <div class="topbar-right">
-      <span class="nav-btn" onclick="showRota()">📊 ROTA</span>
+      <span class="nav-btn" id="rota-btn" onclick="showRota()">📊 ROTA</span>
       <span class="nav-btn" onclick="loadPage('portal/availability.html',this)">📅 My Availability</span>
-      <span class="nav-btn" onclick="loadPage('portal/schedule.html',this)">🗓 My Schedule</span>
+      <span class="nav-btn" id="schedule-btn" onclick="loadPage('portal/schedule.html',this)">🗓 My Schedule</span>
       <span class="nav-btn" id="all-staff-btn" style="display:none" onclick="loadPage('portal/manager.html',this)">👥 All Staff</span>
       <span class="nav-btn" id="manage-staff-btn" style="display:none" onclick="loadPage('portal/staff-manage.html',this)">⚙️ Manage Staff</span>
       <span class="nav-btn" id="edit-rota-btn" style="display:none" onclick="loadPage('portal/rota-edit.html',this)">✏️ Edit ROTA</span>
@@ -232,10 +232,20 @@ async function init() {
   const { data: profileArr } = await sb.rpc('get_my_profile');
   const profile = profileArr?.[0];
   document.getElementById('user-name').textContent = profile?.name || session.user.email;
+
+  // Manager-only tabs
   if (profile?.is_manager) {
     document.getElementById('all-staff-btn').style.display = 'inline-flex';
     document.getElementById('manage-staff-btn').style.display = 'inline-flex';
     document.getElementById('edit-rota-btn').style.display = 'inline-flex';
+  }
+
+  // Per-staff permissions (default true if not set)
+  if (profile?.can_view_rota === false) {
+    document.getElementById('rota-btn').style.display = 'none';
+  }
+  if (profile?.can_view_schedule === false) {
+    document.getElementById('schedule-btn').style.display = 'none';
   }
 
   document.getElementById('app').style.display = 'flex';

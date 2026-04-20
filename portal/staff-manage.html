@@ -247,7 +247,23 @@
     <div class="form-group">
       <label class="checkbox-label">
         <input type="checkbox" id="f-manager">
-        <span>Manager access (สามารถดู All Staff และ generate ROTA ได้)</span>
+        <span>Manager access (สามารถดู All Staff และ Edit ROTA ได้)</span>
+      </label>
+    </div>
+
+    <hr class="divider">
+    <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">🔐 Portal Access</div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="f-can-rota" checked>
+        <span>📊 View full ROTA schedule (ดูตารางงานทีม)</span>
+      </label>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="f-can-schedule" checked>
+        <span>🗓 View My Schedule (ดูตารางงานตัวเอง)</span>
       </label>
     </div>
 
@@ -361,6 +377,8 @@ function openAddModal() {
   document.getElementById('f-visa').value = 'British/Settled';
   document.getElementById('f-hours').value = 40;
   document.getElementById('f-manager').checked = false;
+  document.getElementById('f-can-rota').checked = true;
+  document.getElementById('f-can-schedule').checked = true;
   document.getElementById('hours-hint').textContent = 'Auto จากประเภทวีซ่า';
   document.getElementById('save-btn').textContent = 'Add Staff Member';
   document.getElementById('modal').style.display = 'flex';
@@ -380,6 +398,8 @@ function openEditModal(staffId) {
   document.getElementById('f-visa').value = s.visa_type || 'British/Settled';
   document.getElementById('f-hours').value = s.contract_hours;
   document.getElementById('f-manager').checked = s.is_manager;
+  document.getElementById('f-can-rota').checked = s.can_view_rota !== false;
+  document.getElementById('f-can-schedule').checked = s.can_view_schedule !== false;
   const restricted = VISA_RESTRICTED.has(s.visa_type);
   document.getElementById('hours-hint').textContent = restricted
     ? `⚠️ วีซ่านี้ทำงานได้สูงสุด ${VISA_HOURS[s.visa_type]}h/สัปดาห์`
@@ -393,13 +413,15 @@ function handleOverlayClick(e) { if (e.target.id === 'modal') closeModal(); }
 
 // ── Save (add or edit) ──────────────────────────────────────────
 async function saveStaff() {
-  const name     = document.getElementById('f-name').value.trim();
-  const email    = document.getElementById('f-email').value.trim().toLowerCase();
-  const password = document.getElementById('f-password').value;
-  const role     = document.getElementById('f-role').value;
-  const visa     = document.getElementById('f-visa').value;
-  const hours    = parseInt(document.getElementById('f-hours').value) || 20;
-  const isMgr    = document.getElementById('f-manager').checked;
+  const name        = document.getElementById('f-name').value.trim();
+  const email       = document.getElementById('f-email').value.trim().toLowerCase();
+  const password    = document.getElementById('f-password').value;
+  const role        = document.getElementById('f-role').value;
+  const visa        = document.getElementById('f-visa').value;
+  const hours       = parseInt(document.getElementById('f-hours').value) || 20;
+  const isMgr       = document.getElementById('f-manager').checked;
+  const canRota     = document.getElementById('f-can-rota').checked;
+  const canSchedule = document.getElementById('f-can-schedule').checked;
 
   if (!name)                        { showToast('กรุณาใส่ชื่อพนักงาน', 'error'); return; }
   if (!editingId && !email)         { showToast('กรุณาใส่ email', 'error'); return; }
@@ -431,6 +453,8 @@ async function saveStaff() {
       p_visa_type: visa,
       p_contract_hours: hours,
       p_is_manager: isMgr,
+      p_can_view_rota: canRota,
+      p_can_view_schedule: canSchedule,
     });
     if (rpcErr) throw new Error(rpcErr.message);
 
