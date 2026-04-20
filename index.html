@@ -106,7 +106,7 @@ function setNavActive(el) {
 function loadPage(url, el) {
   document.querySelector('.sidebar').style.display = 'none';
   document.querySelector('.toolbar').style.display = 'none';
-  document.getElementById('rota-frame').src = url;
+  document.getElementById('rota-frame').src = url + '?embed=1';
   setNavActive(el);
 }
 

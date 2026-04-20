@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manager Dashboard — Bingsoo</title>
+<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -306,12 +308,6 @@ async function init() {
   if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
 
   document.getElementById('topbar-name').textContent = staff.name;
-
-  // Hide own chrome when embedded in the main dashboard iframe
-  if (window.self !== window.top) {
-    document.querySelector('.topbar').style.display = 'none';
-    document.querySelector('.nav-links').style.display = 'none';
-  }
 
   populateWeeks();
   await loadData();
