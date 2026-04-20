@@ -241,14 +241,27 @@ async function init() {
   }
 
   // Per-staff permissions (default true if not set)
-  if (profile?.can_view_rota === false) {
+  const canRota     = profile?.can_view_rota !== false;
+  const canSchedule = profile?.can_view_schedule !== false;
+
+  if (!canRota) {
     document.getElementById('rota-btn').style.display = 'none';
   }
-  if (profile?.can_view_schedule === false) {
+  if (!canSchedule) {
     document.getElementById('schedule-btn').style.display = 'none';
   }
 
   document.getElementById('app').style.display = 'flex';
+
+  // If staff can't view ROTA, don't show it — load My Availability instead
+  if (!canRota) {
+    document.querySelector('.sidebar').style.display = 'none';
+    document.querySelector('.toolbar').style.display = 'none';
+    const frame = document.getElementById('rota-frame');
+    frame.onload = null;
+    frame.src = 'portal/availability.html?embed=1';
+    return;
+  }
 
   // Apply overrides to the initial iframe
   const frame = document.getElementById('rota-frame');
