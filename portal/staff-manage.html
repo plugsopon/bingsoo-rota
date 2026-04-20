@@ -360,6 +360,8 @@ async function loadStaff() {
     return;
   }
   allStaff = data || [];
+  const ROLE_ORDER = { 'Manager': 0, 'Supervisor': 1, 'Team Leader': 2, 'Team Member': 3, 'CM': 0, 'SV': 1, 'CA': 3 };
+  allStaff.sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) || a.name.localeCompare(b.name));
   renderStaff(allStaff);
 }
 
