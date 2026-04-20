@@ -66,6 +66,11 @@
   .staff-email { font-size: 12px; color: #888; margin-top: 3px; }
   .staff-meta { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; margin-top: 7px; }
   .role-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .role-Manager { background: #fce7f3; color: #9d174d; }
+  .role-Supervisor { background: #ede9fe; color: #5b21b6; }
+  .role-Team-Leader { background: #fef3c7; color: #92400e; }
+  .role-Team-Member { background: #e0f2fe; color: #075985; }
+  /* legacy badge support */
   .role-CM { background: #fce7f3; color: #9d174d; }
   .role-SV { background: #ede9fe; color: #5b21b6; }
   .role-CA { background: #e0f2fe; color: #075985; }
@@ -185,7 +190,7 @@
   <div class="page-header">
     <div>
       <h2>⚙️ Manage Staff</h2>
-      <p>เพิ่ม แก้ไข หรือลบพนักงาน และตั้งค่าตำแหน่ง / วีซ่า</p>
+      <p>Add, edit or remove staff and configure roles / visa</p>
     </div>
     <button class="add-btn" onclick="openAddModal()">+ Add Staff</button>
   </div>
@@ -206,48 +211,49 @@
     <div class="form-group">
       <label>Email Address *</label>
       <input type="email" id="f-email" placeholder="e.g. kim@bingsoo.cafe" autocomplete="off">
-      <div class="form-hint" id="email-hint">พนักงานจะใช้ email นี้ login</div>
+      <div class="form-hint" id="email-hint">Staff will use this email to log in</div>
     </div>
 
     <div class="form-group" id="pw-group">
       <label>Temporary Password *</label>
       <input type="password" id="f-password" placeholder="Minimum 6 characters" autocomplete="new-password">
-      <div class="form-hint">พนักงานสามารถเปลี่ยนรหัสผ่านได้ทีหลัง</div>
+      <div class="form-hint">Staff can change their password later</div>
     </div>
 
     <hr class="divider">
 
     <div class="form-row">
       <div class="form-group">
-        <label>ตำแหน่ง (Role)</label>
+        <label>Role</label>
         <select id="f-role">
-          <option value="CA">Assistant (CA)</option>
-          <option value="SV">Supervisor (SV)</option>
-          <option value="CM">Cafe Manager (CM)</option>
+          <option value="Manager">Manager</option>
+          <option value="Supervisor">Supervisor</option>
+          <option value="Team Leader">Team Leader</option>
+          <option value="Team Member">Team Member</option>
         </select>
       </div>
       <div class="form-group">
-        <label>สัญญาชั่วโมง/สัปดาห์</label>
+        <label>Contract hours/week</label>
         <input type="number" id="f-hours" min="1" max="48" value="40">
-        <div class="form-hint" id="hours-hint">Auto จากประเภทวีซ่า</div>
+        <div class="form-hint" id="hours-hint">Auto from visa type</div>
       </div>
     </div>
 
     <div class="form-group">
-      <label>ประเภทวีซ่า</label>
+      <label>Visa type</label>
       <select id="f-visa" onchange="onVisaChange()">
         <option value="British/Settled">🇬🇧 British / Settled Status</option>
-        <option value="Student Visa">🎓 Student Visa — จำกัด 20h/สัปดาห์</option>
+        <option value="Student Visa">🎓 Student Visa — limited to 20h/week</option>
         <option value="Graduate Visa">🎓 Graduate Visa</option>
         <option value="Skilled Worker">💼 Skilled Worker Visa</option>
-        <option value="Holiday/Other">✈️ Holiday / Other — จำกัด 20h/สัปดาห์</option>
+        <option value="Holiday/Other">✈️ Holiday / Other — limited to 20h/week</option>
       </select>
     </div>
 
     <div class="form-group">
       <label class="checkbox-label">
         <input type="checkbox" id="f-manager">
-        <span>Manager access (สามารถดู All Staff และ Edit ROTA ได้)</span>
+        <span>Manager access (can view All Staff and Edit ROTA)</span>
       </label>
     </div>
 
@@ -257,13 +263,13 @@
     <div class="form-group">
       <label class="checkbox-label">
         <input type="checkbox" id="f-can-rota" checked>
-        <span>📊 View full ROTA schedule (ดูตารางงานทีม)</span>
+        <span>📊 View full ROTA schedule</span>
       </label>
     </div>
     <div class="form-group">
       <label class="checkbox-label">
         <input type="checkbox" id="f-can-schedule" checked>
-        <span>🗓 View My Schedule (ดูตารางงานตัวเอง)</span>
+        <span>🗓 View My Schedule</span>
       </label>
     </div>
 
@@ -314,7 +320,7 @@ function onVisaChange() {
   const h = VISA_HOURS[visa] ?? 40;
   document.getElementById('f-hours').value = h;
   document.getElementById('hours-hint').textContent =
-    VISA_RESTRICTED.has(visa) ? `⚠️ วีซ่านี้ทำงานได้สูงสุด ${h}h/สัปดาห์` : 'Auto จากประเภทวีซ่า';
+    VISA_RESTRICTED.has(visa) ? `⚠️ This visa allows max ${h}h/week` : 'Auto from visa type';
 }
 
 // ── Load & render ───────────────────────────────────────────────
@@ -323,8 +329,8 @@ async function loadStaff() {
   if (error) {
     document.getElementById('staff-list').innerHTML =
       `<div class="empty-state"><div class="empty-icon">❌</div>
-       <div style="font-weight:600;margin-bottom:8px">ยังไม่ได้รัน SQL Setup</div>
-       <div style="font-size:13px">กรุณา copy SQL จาก staff-manage-setup.sql แล้วรันใน Supabase SQL Editor</div></div>`;
+       <div style="font-weight:600;margin-bottom:8px">SQL setup not run</div>
+       <div style="font-size:13px">Please copy the SQL from staff-manage-setup.sql and run it in the Supabase SQL Editor</div></div>`;
     return;
   }
   allStaff = data || [];
@@ -334,13 +340,13 @@ async function loadStaff() {
 function renderStaff(staff) {
   const el = document.getElementById('staff-list');
   if (!staff.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div>ยังไม่มีพนักงาน กด "+ Add Staff" เพื่อเพิ่ม</div></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div>No staff yet. Click "+ Add Staff" to add one.</div></div>`;
     return;
   }
   el.innerHTML = staff.map(s => {
     const initials = s.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     const restricted = VISA_RESTRICTED.has(s.visa_type);
-    const visaLabel = (s.visa_type || 'British/Settled').replace(' — จำกัด 20h/สัปดาห์', '');
+    const visaLabel = (s.visa_type || 'British/Settled').replace(' — limited to 20h/week', '').replace(' — จำกัด 20h/สัปดาห์', '');
     return `<div class="staff-card">
       <div class="staff-avatar">${initials}</div>
       <div class="staff-info">
@@ -350,7 +356,7 @@ function renderStaff(staff) {
         </div>
         <div class="staff-email">${s.email || '—'}</div>
         <div class="staff-meta">
-          <span class="role-badge role-${s.role}">${s.role}</span>
+          <span class="role-badge role-${s.role.replace(/ /g,'-')}">${s.role}</span>
           <span class="visa-badge ${restricted ? 'restricted' : ''}">${visaLabel}</span>
           <span class="hours-tag">⏱ ${s.contract_hours}h/week</span>
         </div>
@@ -370,16 +376,16 @@ function openAddModal() {
   document.getElementById('f-name').value = '';
   document.getElementById('f-email').value = '';
   document.getElementById('f-email').disabled = false;
-  document.getElementById('email-hint').textContent = 'พนักงานจะใช้ email นี้ login';
+  document.getElementById('email-hint').textContent = 'Staff will use this email to log in';
   document.getElementById('f-password').value = '';
   document.getElementById('pw-group').style.display = 'block';
-  document.getElementById('f-role').value = 'CA';
+  document.getElementById('f-role').value = 'Team Member';
   document.getElementById('f-visa').value = 'British/Settled';
   document.getElementById('f-hours').value = 40;
   document.getElementById('f-manager').checked = false;
   document.getElementById('f-can-rota').checked = true;
   document.getElementById('f-can-schedule').checked = true;
-  document.getElementById('hours-hint').textContent = 'Auto จากประเภทวีซ่า';
+  document.getElementById('hours-hint').textContent = 'Auto from visa type';
   document.getElementById('save-btn').textContent = 'Add Staff Member';
   document.getElementById('modal').style.display = 'flex';
 }
@@ -392,7 +398,7 @@ function openEditModal(staffId) {
   document.getElementById('f-name').value = s.name;
   document.getElementById('f-email').value = s.email || '';
   document.getElementById('f-email').disabled = true;
-  document.getElementById('email-hint').textContent = 'ไม่สามารถเปลี่ยน email ได้หลังสร้างแล้ว';
+  document.getElementById('email-hint').textContent = 'Email cannot be changed after creation';
   document.getElementById('pw-group').style.display = 'none';
   document.getElementById('f-role').value = s.role;
   document.getElementById('f-visa').value = s.visa_type || 'British/Settled';
@@ -402,8 +408,8 @@ function openEditModal(staffId) {
   document.getElementById('f-can-schedule').checked = s.can_view_schedule !== false;
   const restricted = VISA_RESTRICTED.has(s.visa_type);
   document.getElementById('hours-hint').textContent = restricted
-    ? `⚠️ วีซ่านี้ทำงานได้สูงสุด ${VISA_HOURS[s.visa_type]}h/สัปดาห์`
-    : 'Auto จากประเภทวีซ่า';
+    ? `⚠️ This visa allows max ${VISA_HOURS[s.visa_type]}h/week`
+    : 'Auto from visa type';
   document.getElementById('save-btn').textContent = 'Save Changes';
   document.getElementById('modal').style.display = 'flex';
 }
@@ -423,11 +429,11 @@ async function saveStaff() {
   const canRota     = document.getElementById('f-can-rota').checked;
   const canSchedule = document.getElementById('f-can-schedule').checked;
 
-  if (!name)                        { showToast('กรุณาใส่ชื่อพนักงาน', 'error'); return; }
-  if (!editingId && !email)         { showToast('กรุณาใส่ email', 'error'); return; }
-  if (!editingId && password.length < 6) { showToast('Password ต้องมีอย่างน้อย 6 ตัวอักษร', 'error'); return; }
+  if (!name)                        { showToast('Please enter staff name', 'error'); return; }
+  if (!editingId && !email)         { showToast('Please enter email', 'error'); return; }
+  if (!editingId && password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
   if (VISA_RESTRICTED.has(visa) && hours > VISA_HOURS[visa]) {
-    showToast(`⚠️ วีซ่านี้ทำงานได้สูงสุด ${VISA_HOURS[visa]}h/สัปดาห์`, 'error'); return;
+    showToast(`⚠️ This visa allows max ${VISA_HOURS[visa]}h/week`, 'error'); return;
   }
 
   const btn = document.getElementById('save-btn');
@@ -440,7 +446,7 @@ async function saveStaff() {
       // Create Supabase auth account
       const { data: authData, error: authErr } = await sb.auth.signUp({ email, password });
       if (authErr) throw new Error(authErr.message);
-      if (!authData?.user?.id) throw new Error('ไม่สามารถสร้าง account ได้');
+      if (!authData?.user?.id) throw new Error('Failed to create account');
       staffId = authData.user.id;
     }
 
@@ -458,7 +464,7 @@ async function saveStaff() {
     });
     if (rpcErr) throw new Error(rpcErr.message);
 
-    showToast(editingId ? `✅ อัพเดต ${name} แล้ว` : `✅ เพิ่ม ${name} แล้ว`, 'success');
+    showToast(editingId ? `✅ Updated ${name}` : `✅ Added ${name}`, 'success');
     closeModal();
     await loadStaff();
   } catch (err) {
@@ -473,7 +479,7 @@ async function saveStaff() {
 function openConfirm(staffId, name) {
   deletingId = staffId;
   document.getElementById('confirm-text').textContent =
-    `ลบ "${name}" ออกจากระบบ? Account login จะถูก deactivate`;
+    `Remove "${name}" from the system? Their login account will be deactivated.`;
   document.getElementById('confirm-modal').style.display = 'flex';
 }
 function closeConfirm() {
@@ -488,7 +494,7 @@ async function confirmDelete() {
   if (error) {
     showToast('Error: ' + error.message, 'error');
   } else {
-    showToast('✅ ลบพนักงานแล้ว', 'success');
+    showToast('✅ Staff member removed', 'success');
     closeConfirm();
     await loadStaff();
   }

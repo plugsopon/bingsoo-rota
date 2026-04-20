@@ -108,6 +108,10 @@
     font-weight: 600;
     margin-left: 6px;
   }
+  .role-Manager { background: #fce7f3; color: #9d174d; }
+  .role-Supervisor { background: #ede9fe; color: #5b21b6; }
+  .role-Team-Leader { background: #fef3c7; color: #92400e; }
+  .role-Team-Member { background: #e0f2fe; color: #075985; }
   .role-CM { background: #fce7f3; color: #9d174d; }
   .role-SV { background: #ede9fe; color: #5b21b6; }
   .role-CA { background: #e0f2fe; color: #075985; }
@@ -253,7 +257,7 @@ async function loadData() {
   ]);
 
   let allStaff = staffRes.data || [];
-  const ROLE_ORDER = { 'CM': 0, 'SV': 1, 'CA': 2 };
+  const ROLE_ORDER = { 'Manager': 0, 'Supervisor': 1, 'Team Leader': 2, 'Team Member': 3, 'CM': 0, 'SV': 1, 'CA': 3 };
   allStaff.sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) || a.name.localeCompare(b.name));
   const allAvail = availRes.data || [];
 
@@ -291,7 +295,7 @@ async function loadData() {
   html += '</tr></thead><tbody>';
 
   allStaff.forEach(staff => {
-    html += `<tr><td class="name-cell">${staff.name}<span class="role-badge role-${staff.role}">${staff.role}</span></td>`;
+    html += `<tr><td class="name-cell">${staff.name}<span class="role-badge role-${staff.role.replace(/ /g,'-')}">${staff.role}</span></td>`;
     dates.forEach(date => {
       const slot = availMap[staff.id]?.[date];
       if (!slot) {
