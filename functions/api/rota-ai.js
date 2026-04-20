@@ -70,6 +70,14 @@ export async function onRequestPost(context) {
 
     const claudeData = await claudeRes.json();
 
+    // If error from Anthropic, return full error details for debugging
+    if (!claudeRes.ok) {
+      return json({
+        error: claudeData?.error?.message || JSON.stringify(claudeData),
+        _debug: { status: claudeRes.status, body: claudeData }
+      }, claudeRes.status);
+    }
+
     return new Response(JSON.stringify(claudeData), {
       status: claudeRes.status,
       headers: { 'Content-Type': 'application/json', ...CORS },
