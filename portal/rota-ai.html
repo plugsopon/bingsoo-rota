@@ -841,20 +841,15 @@ function genId() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// ── Context Sources (read-only — managed in context-sources.html) ─────────
+// ── Context Sources (reads from Supabase — managed in context-sources.html)
 // ══════════════════════════════════════════════════════════════════════════
-const SRC_STORAGE_KEY = 'bingsoo_ctx_sources_v1';
-
-function getSources() {
-  try { return JSON.parse(localStorage.getItem(SRC_STORAGE_KEY) || '[]'); }
-  catch { return []; }
-}
 
 // ── Preview chips in left panel ───────────────────────────────────────────
-function renderSrcPreview() {
+async function renderSrcPreview() {
   const el = document.getElementById('src-preview');
   if (!el) return;
-  const enabled = getSources().filter(s => s.enabled);
+  const { data } = await sb.from('context_sources').select('name, type').eq('is_enabled', true).order('created_at');
+  const enabled = data || [];
   if (enabled.length === 0) {
     el.innerHTML = `<div class="src-empty-hint">No sources yet</div>`;
     return;
@@ -917,7 +912,8 @@ function deleteSrc(id) {
 
 // ── Fetch all enabled sources → returns text block for system prompt ───────
 async function fetchAllSources() {
-  const sources = getSources().filter(s => s.enabled);
+  const { data } = await sb.from('context_sources').select('*').eq('is_enabled', true).order('created_at');
+  const sources = data || [];
   if (sources.length === 0) return { text: '', count: 0 };
 
   const parts = [];

@@ -195,7 +195,6 @@ const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const SRC_KEY = 'bingsoo_ctx_sources_v1';
 let currentType = 'sheet';
 
 // ── Auth ──────────────────────────────────────────────────────────────────
@@ -212,26 +211,29 @@ async function init() {
   if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
   document.getElementById('topbar-name').textContent = staff.name;
   renderTypeFields();
-  renderSources();
+  await renderSources();
 }
 
-// ── Storage ───────────────────────────────────────────────────────────────
-function getSources() {
-  try { return JSON.parse(localStorage.getItem(SRC_KEY) || '[]'); } catch { return []; }
-}
-function saveSources(list) { localStorage.setItem(SRC_KEY, JSON.stringify(list)); }
-function genId() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
-
-// ── Render source list ────────────────────────────────────────────────────
-function renderSources() {
-  const sources = getSources();
-  const grid = document.getElementById('sources-grid');
+// ── Render source list (reads from Supabase) ──────────────────────────────
+async function renderSources() {
+  const grid  = document.getElementById('sources-grid');
   const label = document.getElementById('list-label');
+  grid.innerHTML = `<div style="text-align:center;padding:20px;color:#bbb;font-size:13px">Loading…</div>`;
 
-  const enabled = sources.filter(s => s.enabled).length;
-  label.textContent = `Your sources — ${enabled} active, ${sources.length} total`;
+  const { data: sources, error } = await sb
+    .from('context_sources')
+    .select('*')
+    .order('created_at');
 
-  if (sources.length === 0) {
+  if (error) {
+    grid.innerHTML = `<div style="color:#ef4444;font-size:13px;padding:12px">Error: ${esc(error.message)}</div>`;
+    return;
+  }
+
+  const enabled = (sources || []).filter(s => s.is_enabled).length;
+  label.textContent = `Your sources — ${enabled} active, ${(sources||[]).length} total`;
+
+  if (!sources || sources.length === 0) {
     grid.innerHTML = `
       <div class="src-empty">
         <div class="empty-icon">📭</div>
@@ -245,7 +247,7 @@ function renderSources() {
     const isSheet = s.type === 'sheet';
     const icon  = isSheet ? '📊' : '📝';
     const badge = isSheet ? 'sheet' : 'note';
-    const label = isSheet ? 'Live Sheet' : 'Note';
+    const lbl   = isSheet ? 'Live Sheet' : 'Note';
     const desc  = isSheet
       ? (s.config.url ? shortenUrl(s.config.url) + (s.config.sheet ? ` · tab: ${s.config.sheet}` : '') : 'No URL set')
       : (s.config.link
@@ -253,21 +255,21 @@ function renderSources() {
           : (s.config.content ? s.config.content.slice(0, 100) + (s.config.content.length > 100 ? '…' : '') : 'Empty'));
 
     return `
-      <div class="src-card ${s.enabled ? '' : 'src-off'}" id="card-${s.id}">
+      <div class="src-card ${s.is_enabled ? '' : 'src-off'}">
         <div class="src-card-icon">${icon}</div>
         <div class="src-card-body">
           <div class="src-card-name">${esc(s.name)}</div>
           <div class="src-card-meta">
-            <span class="src-badge ${badge}">${label}</span>
+            <span class="src-badge ${badge}">${lbl}</span>
             <span class="src-card-desc">${esc(desc)}</span>
           </div>
         </div>
         <div class="src-card-actions">
-          <label class="tog" title="${s.enabled ? 'Enabled — click to disable' : 'Disabled — click to enable'}">
-            <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSource('${s.id}', this.checked)">
+          <label class="tog" title="${s.is_enabled ? 'Enabled' : 'Disabled'}">
+            <input type="checkbox" ${s.is_enabled ? 'checked' : ''} onchange="toggleSource('${s.id}', this.checked)">
             <span class="tog-track"></span>
           </label>
-          <button class="del-btn" onclick="deleteSource('${s.id}')" title="Delete">🗑</button>
+          <button class="del-btn" onclick="deleteSource('${s.id}','${esc(s.name)}')" title="Delete">🗑</button>
         </div>
       </div>`;
   }).join('');
@@ -373,46 +375,50 @@ async function testLink() {
   }
 }
 
-// ── CRUD ──────────────────────────────────────────────────────────────────
-function addSource() {
+// ── CRUD (Supabase) ───────────────────────────────────────────────────────
+async function addSource() {
   const name = document.getElementById('src-name')?.value?.trim();
   if (!name) { alert('Please give this source a name.'); return; }
 
-  const src = { id: genId(), name, type: currentType, enabled: true, config: {} };
-
+  let config = {};
   if (currentType === 'sheet') {
     const url = document.getElementById('src-url')?.value?.trim();
     if (!url) { alert('Please enter the Google Sheets URL.'); return; }
-    src.config = { url, sheet: document.getElementById('src-sheet')?.value?.trim() || '' };
+    config = { url, sheet: document.getElementById('src-sheet')?.value?.trim() || '' };
   } else {
     const content = document.getElementById('src-content')?.value?.trim();
     const link    = document.getElementById('src-link')?.value?.trim();
     if (!content && !link) { alert('Please enter some content or a URL to fetch.'); return; }
-    src.config = { content: content || '', link: link || '' };
+    config = { content: content || '', link: link || '' };
   }
 
-  const list = getSources();
-  list.push(src);
-  saveSources(list);
+  const btn = document.querySelector('.add-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
 
-  // Reset form
+  const { error } = await sb.from('context_sources').insert({
+    name, type: currentType, config, is_enabled: true
+  });
+
+  btn.disabled = false; btn.textContent = 'Add Source';
+
+  if (error) { alert('Error saving: ' + error.message); return; }
+
   document.getElementById('src-name').value = '';
   renderTypeFields();
-  renderSources();
+  await renderSources();
 }
 
-function toggleSource(id, enabled) {
-  const list = getSources();
-  const s = list.find(x => x.id === id);
-  if (s) { s.enabled = enabled; saveSources(list); renderSources(); }
+async function toggleSource(id, enabled) {
+  await sb.from('context_sources')
+    .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  await renderSources();
 }
 
-function deleteSource(id) {
-  const src = getSources().find(s => s.id === id);
-  if (!src) return;
-  if (!confirm(`Delete "${src.name}"?`)) return;
-  saveSources(getSources().filter(s => s.id !== id));
-  renderSources();
+async function deleteSource(id, name) {
+  if (!confirm(`Delete "${name}"?`)) return;
+  await sb.from('context_sources').delete().eq('id', id);
+  await renderSources();
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────
