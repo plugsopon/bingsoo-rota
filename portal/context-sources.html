@@ -248,7 +248,9 @@ function renderSources() {
     const label = isSheet ? 'Live Sheet' : 'Note';
     const desc  = isSheet
       ? (s.config.url ? shortenUrl(s.config.url) + (s.config.sheet ? ` · tab: ${s.config.sheet}` : '') : 'No URL set')
-      : (s.config.content ? s.config.content.slice(0, 100) + (s.config.content.length > 100 ? '…' : '') : 'Empty');
+      : (s.config.link
+          ? `🔗 ${shortenUrl(s.config.link)}${s.config.content ? ' + note' : ''}`
+          : (s.config.content ? s.config.content.slice(0, 100) + (s.config.content.length > 100 ? '…' : '') : 'Empty'));
 
     return `
       <div class="src-card ${s.enabled ? '' : 'src-off'}" id="card-${s.id}">
@@ -299,9 +301,17 @@ function renderTypeFields() {
   } else {
     el.innerHTML = `
       <div class="form-row">
-        <label>Content</label>
-        <textarea class="form-input" id="src-content" placeholder="Write anything the AI should always know — store hours, rules, upcoming events, policies, special notes…"></textarea>
-      </div>`;
+        <label>Content <span>(optional if URL is set)</span></label>
+        <textarea class="form-input" id="src-content" placeholder="Write anything the AI should know — store hours, rules, policies, notes…&#10;&#10;Leave blank if you only want to fetch from the URL below."></textarea>
+      </div>
+      <div class="form-row">
+        <label>URL to fetch <span>(optional — weather site, any webpage)</span></label>
+        <input class="form-input" type="url" id="src-link" placeholder="https://weather.com/… or any public webpage">
+      </div>
+      <div id="link-test-row" style="margin-top:6px">
+        <button class="test-btn" onclick="testLink()">🔍 Test Fetch</button>
+      </div>
+      <div class="test-result" id="link-test-result"></div>`;
   }
 }
 
@@ -339,6 +349,30 @@ async function fetchSheetCsv(url, sheetName) {
   return r.text();
 }
 
+// ── Test URL fetch ────────────────────────────────────────────────────────
+async function testLink() {
+  const url = document.getElementById('src-link')?.value?.trim();
+  const el  = document.getElementById('link-test-result');
+  if (!el) return;
+  if (!url) { el.textContent = '⚠️ Enter a URL first'; el.className = 'test-result show err'; return; }
+  el.textContent = '⏳ Fetching…'; el.className = 'test-result show';
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch('/api/fetch-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ url, maxChars: 500 })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+    el.textContent = `✅ Fetched! Preview:\n${data.text.slice(0, 400)}${data.text.length > 400 ? '…' : ''}`;
+    el.className = 'test-result show ok';
+  } catch (err) {
+    el.textContent = `❌ ${err.message}`;
+    el.className = 'test-result show err';
+  }
+}
+
 // ── CRUD ──────────────────────────────────────────────────────────────────
 function addSource() {
   const name = document.getElementById('src-name')?.value?.trim();
@@ -352,8 +386,9 @@ function addSource() {
     src.config = { url, sheet: document.getElementById('src-sheet')?.value?.trim() || '' };
   } else {
     const content = document.getElementById('src-content')?.value?.trim();
-    if (!content) { alert('Please enter some content for this note.'); return; }
-    src.config = { content };
+    const link    = document.getElementById('src-link')?.value?.trim();
+    if (!content && !link) { alert('Please enter some content or a URL to fetch.'); return; }
+    src.config = { content: content || '', link: link || '' };
   }
 
   const list = getSources();

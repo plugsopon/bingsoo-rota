@@ -670,7 +670,28 @@ async function fetchAllSources() {
         const trimmed = lines.slice(0, 200).join('\n') + (lines.length > 200 ? '\n[…truncated]' : '');
         parts.push(`## Additional Context: ${src.name}\n(Live from Google Sheet)\n\n${trimmed}`);
       } else {
-        parts.push(`## Additional Context: ${src.name}\n\n${src.config.content}`);
+        // Note — may have static content and/or a live URL to fetch
+        let noteParts = [];
+        if (src.config.content) noteParts.push(src.config.content);
+        if (src.config.link) {
+          try {
+            const { data: { session } } = await sb.auth.getSession();
+            const res = await fetch('/api/fetch-url', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+              body: JSON.stringify({ url: src.config.link, maxChars: 3000 })
+            });
+            const data = await res.json();
+            if (res.ok && data.text) {
+              noteParts.push(`[Fetched from ${src.config.link}]\n${data.text}`);
+            } else {
+              noteParts.push(`[Could not fetch ${src.config.link}: ${data.error || 'unknown error'}]`);
+            }
+          } catch (err) {
+            noteParts.push(`[Could not fetch ${src.config.link}: ${err.message}]`);
+          }
+        }
+        parts.push(`## Additional Context: ${src.name}\n\n${noteParts.join('\n\n')}`);
       }
     } catch (err) {
       parts.push(`## Additional Context: ${src.name}\n⚠️ Could not load — ${err.message}`);
