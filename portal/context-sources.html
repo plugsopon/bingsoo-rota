@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Sources — Bingsoo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* Topbar */
+.topbar {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white; padding: 14px 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2); flex-shrink: 0;
+}
+.topbar h1 { font-size: 17px; font-weight: 700; }
+.logout-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+.logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* Nav */
+.nav-links { display: flex; gap: 10px; padding: 14px 24px 0; flex-wrap: wrap; flex-shrink: 0; }
+.nav-link { background: white; color: #667eea; border: 2px solid #667eea; border-radius: 10px; padding: 7px 16px; font-size: 13px; font-weight: 600; text-decoration: none; }
+.nav-link.active { background: #667eea; color: white; }
+.nav-link:hover:not(.active) { background: #f0f0ff; }
+
+/* Page header */
+.page-header { padding: 24px 24px 0; }
+.page-header h2 { font-size: 22px; font-weight: 800; color: #1a1a2e; }
+.page-header p { font-size: 13px; color: #888; margin-top: 4px; }
+
+/* Main layout */
+.main { display: grid; grid-template-columns: 1fr 360px; gap: 20px; padding: 20px 24px 32px; align-items: start; }
+
+/* ── Sources list (left) ── */
+.sources-section {}
+.section-title { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+
+.sources-grid { display: flex; flex-direction: column; gap: 10px; }
+
+/* Empty state */
+.src-empty { background: white; border-radius: 14px; padding: 40px 24px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.src-empty .empty-icon { font-size: 44px; margin-bottom: 12px; }
+.src-empty h3 { font-size: 15px; font-weight: 700; color: #888; margin-bottom: 6px; }
+.src-empty p { font-size: 13px; color: #bbb; max-width: 280px; margin: 0 auto; line-height: 1.5; }
+
+/* Source card */
+.src-card {
+  background: white; border-radius: 14px;
+  padding: 16px 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  display: flex; align-items: center; gap: 14px;
+  border: 1.5px solid transparent; transition: border-color 0.15s;
+}
+.src-card:hover { border-color: #e8ebff; }
+.src-card.src-off { opacity: 0.5; }
+.src-card-icon { font-size: 28px; flex-shrink: 0; }
+.src-card-body { flex: 1; min-width: 0; }
+.src-card-name { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+.src-card-meta { display: flex; align-items: center; gap: 7px; margin-top: 4px; }
+.src-badge { font-size: 10px; font-weight: 700; border-radius: 5px; padding: 2px 7px; flex-shrink: 0; }
+.src-badge.sheet { background: #e8f5e9; color: #2e7d32; }
+.src-badge.note  { background: #fff3e0; color: #e65100; }
+.src-card-desc { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
+.src-card-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+/* Toggle */
+.tog { position: relative; width: 40px; height: 22px; cursor: pointer; flex-shrink: 0; }
+.tog input { opacity: 0; width: 0; height: 0; position: absolute; }
+.tog-track { position: absolute; inset: 0; background: #d1d5db; border-radius: 22px; transition: 0.2s; }
+.tog-track::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.tog input:checked ~ .tog-track { background: #667eea; }
+.tog input:checked ~ .tog-track::before { transform: translateX(18px); }
+
+.del-btn { background: #fff0f0; border: none; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: #ef4444; display: flex; align-items: center; justify-content: center; }
+.del-btn:hover { background: #fee2e2; }
+
+/* ── Add source panel (right) ── */
+.add-panel { background: white; border-radius: 16px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 20px; }
+.add-panel h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 18px; }
+
+/* Type selector */
+.type-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+.type-opt { flex: 1; padding: 12px 8px; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.15s; }
+.type-opt:hover:not(.selected) { border-color: #c4c9f0; background: #f8f9ff; }
+.type-opt.selected { border-color: #667eea; background: #f0f0ff; }
+.type-opt-icon { font-size: 24px; display: block; margin-bottom: 5px; }
+.type-opt-label { font-size: 12px; font-weight: 700; color: #888; }
+.type-opt.selected .type-opt-label { color: #667eea; }
+
+/* Form */
+.form-row { margin-bottom: 14px; }
+.form-row label { display: block; font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.form-row label span { font-weight: 400; text-transform: none; }
+.form-input { width: 100%; padding: 9px 12px; border: 1.5px solid #e5e7eb; border-radius: 9px; font-size: 13px; font-family: inherit; outline: none; color: #333; background: white; transition: border-color 0.15s; }
+.form-input:focus { border-color: #667eea; }
+textarea.form-input { resize: vertical; min-height: 110px; line-height: 1.5; }
+
+/* Test connection */
+.test-row { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.test-btn { background: #f8f9ff; border: 1.5px solid #e0e4ff; border-radius: 8px; padding: 7px 14px; font-size: 12px; color: #667eea; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.test-btn:hover { background: #e8ebff; }
+.test-result { font-size: 11px; padding: 8px 11px; border-radius: 8px; border: 1px solid #e8ebff; margin-top: 8px; max-height: 80px; overflow-y: auto; display: none; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+.test-result.show { display: block; }
+.test-result.ok  { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+.test-result.err { color: #dc2626; border-color: #fecaca; background: #fff5f5; }
+
+.add-btn { width: 100%; background: #667eea; color: white; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
+.add-btn:hover { background: #5a6fd6; }
+
+/* Info box */
+.info-box { background: #f8f9ff; border: 1px solid #e0e4ff; border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 12px; color: #666; line-height: 1.6; }
+.info-box strong { color: #667eea; }
+
+@media (max-width: 860px) {
+  .main { grid-template-columns: 1fr; }
+  .add-panel { position: static; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📚 Context Sources — Bingsoo</h1>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="font-size:13px;opacity:0.7" id="topbar-name"></span>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+
+<div class="nav-links">
+  <a href="../index.html" class="nav-link">📊 Rota Dashboard</a>
+  <a href="availability.html" class="nav-link">📅 My Availability</a>
+  <a href="schedule.html" class="nav-link">🗓 My Schedule</a>
+  <a href="manager.html" class="nav-link">👥 All Staff</a>
+  <a href="staff-manage.html" class="nav-link">⚙️ Manage Staff</a>
+  <a href="rota-ai.html" class="nav-link">🤖 AI Assistant</a>
+  <a href="context-sources.html" class="nav-link active">📚 Context Sources</a>
+</div>
+
+<div class="page-header">
+  <h2>Context Sources</h2>
+  <p>Add information that gets sent to the AI every time you use the ROTA Assistant — live Google Sheets, store rules, notes, anything.</p>
+</div>
+
+<div class="main">
+
+  <!-- ── Left: Sources list ── -->
+  <div class="sources-section">
+    <div class="section-title" id="list-label">Your sources</div>
+    <div class="sources-grid" id="sources-grid">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ── Right: Add panel ── -->
+  <div class="add-panel">
+    <h3>➕ Add New Source</h3>
+
+    <div class="type-selector">
+      <div class="type-opt selected" id="opt-sheet" onclick="setType('sheet')">
+        <span class="type-opt-icon">📊</span>
+        <span class="type-opt-label">Live Sheet</span>
+      </div>
+      <div class="type-opt" id="opt-note" onclick="setType('note')">
+        <span class="type-opt-icon">📝</span>
+        <span class="type-opt-label">Note</span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Name</label>
+      <input class="form-input" type="text" id="src-name" placeholder="e.g. Store Rules, Event Schedule…">
+    </div>
+
+    <div id="type-fields">
+      <!-- rendered by JS -->
+    </div>
+
+    <button class="add-btn" onclick="addSource()">Add Source</button>
+
+    <div class="info-box">
+      <strong>📊 Live Sheet</strong> — paste a public Google Sheets link. Data is fetched fresh every time you load a week in AI Assistant.<br><br>
+      <strong>📝 Note</strong> — type anything: opening hours, staff rules, upcoming events, policies. Always included in AI context.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const SRC_KEY = 'bingsoo_ctx_sources_v1';
+let currentType = 'sheet';
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+  const { data: arr } = await sb.rpc('get_my_profile');
+  const staff = arr?.[0];
+  if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
+  document.getElementById('topbar-name').textContent = staff.name;
+  renderTypeFields();
+  renderSources();
+}
+
+// ── Storage ───────────────────────────────────────────────────────────────
+function getSources() {
+  try { return JSON.parse(localStorage.getItem(SRC_KEY) || '[]'); } catch { return []; }
+}
+function saveSources(list) { localStorage.setItem(SRC_KEY, JSON.stringify(list)); }
+function genId() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+
+// ── Render source list ────────────────────────────────────────────────────
+function renderSources() {
+  const sources = getSources();
+  const grid = document.getElementById('sources-grid');
+  const label = document.getElementById('list-label');
+
+  const enabled = sources.filter(s => s.enabled).length;
+  label.textContent = `Your sources — ${enabled} active, ${sources.length} total`;
+
+  if (sources.length === 0) {
+    grid.innerHTML = `
+      <div class="src-empty">
+        <div class="empty-icon">📭</div>
+        <h3>No sources yet</h3>
+        <p>Add your first source using the panel on the right — a Google Sheet or a note.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = sources.map(s => {
+    const isSheet = s.type === 'sheet';
+    const icon  = isSheet ? '📊' : '📝';
+    const badge = isSheet ? 'sheet' : 'note';
+    const label = isSheet ? 'Live Sheet' : 'Note';
+    const desc  = isSheet
+      ? (s.config.url ? shortenUrl(s.config.url) + (s.config.sheet ? ` · tab: ${s.config.sheet}` : '') : 'No URL set')
+      : (s.config.content ? s.config.content.slice(0, 100) + (s.config.content.length > 100 ? '…' : '') : 'Empty');
+
+    return `
+      <div class="src-card ${s.enabled ? '' : 'src-off'}" id="card-${s.id}">
+        <div class="src-card-icon">${icon}</div>
+        <div class="src-card-body">
+          <div class="src-card-name">${esc(s.name)}</div>
+          <div class="src-card-meta">
+            <span class="src-badge ${badge}">${label}</span>
+            <span class="src-card-desc">${esc(desc)}</span>
+          </div>
+        </div>
+        <div class="src-card-actions">
+          <label class="tog" title="${s.enabled ? 'Enabled — click to disable' : 'Disabled — click to enable'}">
+            <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSource('${s.id}', this.checked)">
+            <span class="tog-track"></span>
+          </label>
+          <button class="del-btn" onclick="deleteSource('${s.id}')" title="Delete">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Type selector ─────────────────────────────────────────────────────────
+function setType(type) {
+  currentType = type;
+  document.getElementById('opt-sheet').classList.toggle('selected', type === 'sheet');
+  document.getElementById('opt-note').classList.toggle('selected', type === 'note');
+  renderTypeFields();
+}
+
+function renderTypeFields() {
+  const el = document.getElementById('type-fields');
+  if (currentType === 'sheet') {
+    el.innerHTML = `
+      <div class="form-row">
+        <label>Google Sheets URL</label>
+        <input class="form-input" type="url" id="src-url" placeholder="https://docs.google.com/spreadsheets/d/…">
+      </div>
+      <div class="form-row">
+        <label>Sheet Tab Name <span>(optional — leave blank for first tab)</span></label>
+        <input class="form-input" type="text" id="src-sheet" placeholder="Sheet1">
+      </div>
+      <div class="test-row">
+        <button class="test-btn" onclick="testSheet()">🔍 Test Connection</button>
+        <span id="test-spinner" style="font-size:12px;color:#999;display:none">Connecting…</span>
+      </div>
+      <div class="test-result" id="test-result"></div>`;
+  } else {
+    el.innerHTML = `
+      <div class="form-row">
+        <label>Content</label>
+        <textarea class="form-input" id="src-content" placeholder="Write anything the AI should always know — store hours, rules, upcoming events, policies, special notes…"></textarea>
+      </div>`;
+  }
+}
+
+// ── Test sheet ────────────────────────────────────────────────────────────
+async function testSheet() {
+  const url = document.getElementById('src-url')?.value?.trim();
+  const sheet = document.getElementById('src-sheet')?.value?.trim();
+  const res = document.getElementById('test-result');
+  const spin = document.getElementById('test-spinner');
+  if (!res) return;
+  if (!url) { res.textContent = '⚠️ Paste a Google Sheets URL first'; res.className = 'test-result show err'; return; }
+  if (spin) spin.style.display = 'inline';
+  res.className = 'test-result';
+  try {
+    const csv = await fetchSheetCsv(url, sheet);
+    const lines = csv.split('\n').filter(l => l.trim());
+    res.textContent = `✅ Connected! ${lines.length} rows found.\nFirst row: ${lines[0]?.slice(0, 140)}`;
+    res.className = 'test-result show ok';
+  } catch (err) {
+    res.textContent = `❌ ${err.message}`;
+    res.className = 'test-result show err';
+  } finally {
+    if (spin) spin.style.display = 'none';
+  }
+}
+
+async function fetchSheetCsv(url, sheetName) {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (!m) throw new Error('Invalid URL — copy the full URL from your browser');
+  const id = m[1];
+  let csvUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`;
+  if (sheetName) csvUrl += `&sheet=${encodeURIComponent(sheetName)}`;
+  const r = await fetch(csvUrl);
+  if (!r.ok) throw new Error(`Cannot access sheet (${r.status}). Set sharing to "Anyone with the link can view".`);
+  return r.text();
+}
+
+// ── CRUD ──────────────────────────────────────────────────────────────────
+function addSource() {
+  const name = document.getElementById('src-name')?.value?.trim();
+  if (!name) { alert('Please give this source a name.'); return; }
+
+  const src = { id: genId(), name, type: currentType, enabled: true, config: {} };
+
+  if (currentType === 'sheet') {
+    const url = document.getElementById('src-url')?.value?.trim();
+    if (!url) { alert('Please enter the Google Sheets URL.'); return; }
+    src.config = { url, sheet: document.getElementById('src-sheet')?.value?.trim() || '' };
+  } else {
+    const content = document.getElementById('src-content')?.value?.trim();
+    if (!content) { alert('Please enter some content for this note.'); return; }
+    src.config = { content };
+  }
+
+  const list = getSources();
+  list.push(src);
+  saveSources(list);
+
+  // Reset form
+  document.getElementById('src-name').value = '';
+  renderTypeFields();
+  renderSources();
+}
+
+function toggleSource(id, enabled) {
+  const list = getSources();
+  const s = list.find(x => x.id === id);
+  if (s) { s.enabled = enabled; saveSources(list); renderSources(); }
+}
+
+function deleteSource(id) {
+  const src = getSources().find(s => s.id === id);
+  if (!src) return;
+  if (!confirm(`Delete "${src.name}"?`)) return;
+  saveSources(getSources().filter(s => s.id !== id));
+  renderSources();
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function shortenUrl(url) {
+  try {
+    const u = new URL(url);
+    const path = u.pathname.length > 30 ? u.pathname.slice(0, 30) + '…' : u.pathname;
+    return u.hostname + path;
+  } catch { return url.slice(0, 50); }
+}
+
+init();
+</script>
+</body>
+</html>

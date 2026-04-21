@@ -136,61 +136,9 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100
 .manage-src-btn { width: 100%; background: #f8f9ff; border: 1.5px dashed #c4c9f0; border-radius: 8px; padding: 8px; font-size: 12px; color: #667eea; cursor: pointer; font-weight: 600; transition: all 0.15s; }
 .manage-src-btn:hover { background: #e8ebff; border-color: #667eea; }
 
-/* ── Sources Modal ── */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; display: none; align-items: center; justify-content: center; padding: 20px; }
-.modal-overlay.show { display: flex; }
-.modal-box { background: white; border-radius: 18px; width: 100%; max-width: 560px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.25); overflow: hidden; }
-.modal-header { padding: 18px 22px 14px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.modal-header h2 { font-size: 16px; font-weight: 700; color: #1a1a2e; }
-.modal-close { background: #f3f4f6; border: none; border-radius: 8px; width: 30px; height: 30px; font-size: 20px; cursor: pointer; color: #666; line-height: 1; }
-.modal-close:hover { background: #e5e7eb; }
-.modal-body { flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; }
-.modal-section-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
-.src-list-empty { text-align: center; color: #bbb; font-size: 13px; padding: 16px 0; }
-
-/* Source item in modal */
-.src-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border: 1.5px solid #e8ebff; border-radius: 12px; background: #fafbff; }
-.src-item.src-disabled { opacity: 0.45; }
-.src-item-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-.src-item-body { flex: 1; min-width: 0; }
-.src-item-name { font-size: 13px; font-weight: 700; color: #1a1a2e; }
-.src-item-desc { font-size: 11px; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.src-item-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-
-/* Toggle */
-.tog { position: relative; width: 36px; height: 20px; flex-shrink: 0; cursor: pointer; }
-.tog input { opacity: 0; width: 0; height: 0; position: absolute; }
-.tog-track { position: absolute; inset: 0; background: #d1d5db; border-radius: 20px; transition: 0.2s; }
-.tog-track::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
-.tog input:checked ~ .tog-track { background: #667eea; }
-.tog input:checked ~ .tog-track::before { transform: translateX(16px); }
-
-.src-del-btn { background: #fff0f0; border: none; border-radius: 6px; width: 26px; height: 26px; font-size: 14px; cursor: pointer; color: #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.src-del-btn:hover { background: #fee2e2; }
-
-/* Add source form */
-.add-src-form { border: 2px dashed #e0e4ff; border-radius: 14px; padding: 18px; background: #fafbff; }
-.add-src-form h4 { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 14px; }
-.form-row { margin-bottom: 12px; }
-.form-row:last-child { margin-bottom: 0; }
-.form-row label { display: block; font-size: 10px; font-weight: 700; color: #888; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-.form-input { width: 100%; padding: 8px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; color: #333; background: white; }
-.form-input:focus { border-color: #667eea; }
-textarea.form-input { resize: vertical; min-height: 90px; }
-.type-selector { display: flex; gap: 8px; }
-.type-opt { flex: 1; padding: 10px 8px; border: 2px solid #e5e7eb; border-radius: 10px; text-align: center; cursor: pointer; font-size: 12px; font-weight: 600; color: #888; transition: all 0.15s; }
-.type-opt.selected { border-color: #667eea; background: #f0f0ff; color: #667eea; }
-.type-opt:hover:not(.selected) { border-color: #c4c9f0; background: #f8f9ff; }
-.type-opt-icon { font-size: 22px; display: block; margin-bottom: 4px; }
-.add-src-btn { width: 100%; background: #667eea; color: white; border: none; border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
-.add-src-btn:hover { background: #5a6fd6; }
-.test-row { margin-top: 6px; }
-.test-btn { background: #f8f9ff; border: 1.5px solid #e0e4ff; border-radius: 8px; padding: 6px 14px; font-size: 12px; color: #667eea; cursor: pointer; font-weight: 600; }
-.test-btn:hover { background: #e8ebff; }
-.test-result { font-size: 11px; padding: 8px 10px; background: #f8f9ff; border-radius: 8px; border: 1px solid #e8ebff; margin-top: 8px; max-height: 90px; overflow-y: auto; display: none; white-space: pre-wrap; word-break: break-word; }
-.test-result.show { display: block; }
-.test-result.ok { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
-.test-result.err { color: #dc2626; border-color: #fecaca; background: #fff5f5; }
+/* ── Sources panel (manage link) ── */
+.manage-src-btn { display: block; width: 100%; background: #f8f9ff; border: 1.5px dashed #c4c9f0; border-radius: 8px; padding: 8px; font-size: 12px; color: #667eea; cursor: pointer; font-weight: 600; text-align: center; text-decoration: none; transition: all 0.15s; }
+.manage-src-btn:hover { background: #e8ebff; border-color: #667eea; }
 </style>
 </head>
 <body>
@@ -210,6 +158,7 @@ textarea.form-input { resize: vertical; min-height: 90px; }
   <a href="manager.html" class="nav-link">👥 All Staff</a>
   <a href="staff-manage.html" class="nav-link">⚙️ Manage Staff</a>
   <a href="rota-ai.html" class="nav-link active">🤖 AI Assistant</a>
+  <a href="context-sources.html" class="nav-link">📚 Context Sources</a>
 </div>
 
 <div class="main">
@@ -228,7 +177,7 @@ textarea.form-input { resize: vertical; min-height: 90px; }
     <div class="panel-card">
       <h3>📚 Context Sources</h3>
       <div class="src-preview-list" id="src-preview"></div>
-      <button class="manage-src-btn" onclick="openSourcesModal()">⚙️ Manage Sources</button>
+      <a class="manage-src-btn" href="context-sources.html">⚙️ Manage Sources</a>
     </div>
 
     <div class="panel-card">
@@ -277,19 +226,6 @@ textarea.form-input { resize: vertical; min-height: 90px; }
     </div>
   </div>
 
-</div>
-
-<!-- ── Sources Modal ── -->
-<div class="modal-overlay" id="sources-modal" onclick="if(event.target===this)closeSourcesModal()">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2>📚 Context Sources</h2>
-      <button class="modal-close" onclick="closeSourcesModal()">×</button>
-    </div>
-    <div class="modal-body" id="modal-body">
-      <!-- rendered by JS -->
-    </div>
-  </div>
 </div>
 
 <script>
@@ -645,22 +581,13 @@ function autoResize(el) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// ── Context Sources ───────────────────────────────────────────────────────
+// ── Context Sources (read-only — managed in context-sources.html) ─────────
 // ══════════════════════════════════════════════════════════════════════════
 const SRC_STORAGE_KEY = 'bingsoo_ctx_sources_v1';
-let addSrcType = 'sheet';
-
-function genId() {
-  return Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
-}
 
 function getSources() {
   try { return JSON.parse(localStorage.getItem(SRC_STORAGE_KEY) || '[]'); }
   catch { return []; }
-}
-
-function saveSources(list) {
-  localStorage.setItem(SRC_STORAGE_KEY, JSON.stringify(list));
 }
 
 // ── Preview chips in left panel ───────────────────────────────────────────
@@ -669,7 +596,7 @@ function renderSrcPreview() {
   if (!el) return;
   const enabled = getSources().filter(s => s.enabled);
   if (enabled.length === 0) {
-    el.innerHTML = `<div class="src-empty-hint">No sources yet — add your first one</div>`;
+    el.innerHTML = `<div class="src-empty-hint">No sources yet</div>`;
     return;
   }
   el.innerHTML = enabled.map(s => `
@@ -678,127 +605,6 @@ function renderSrcPreview() {
       <span class="src-chip-name">${escHtml(s.name)}</span>
       <span class="src-chip-type">${s.type === 'sheet' ? 'Sheet' : 'Note'}</span>
     </div>`).join('');
-}
-
-// ── Modal open / close ────────────────────────────────────────────────────
-function openSourcesModal() {
-  addSrcType = 'sheet';
-  document.getElementById('sources-modal').classList.add('show');
-  renderModal();
-}
-
-function closeSourcesModal() {
-  document.getElementById('sources-modal').classList.remove('show');
-  renderSrcPreview();
-}
-
-// ── Render modal content ──────────────────────────────────────────────────
-function renderModal() {
-  const sources = getSources();
-  const enabledCount = sources.filter(s => s.enabled).length;
-
-  const listHtml = sources.length === 0
-    ? `<div class="src-list-empty">No sources yet — add your first one below ↓</div>`
-    : sources.map(s => {
-        const icon = s.type === 'sheet' ? '📊' : '📝';
-        const desc = s.type === 'sheet'
-          ? ((s.config.url ? shortenUrl(s.config.url) : 'No URL') + (s.config.sheet ? ` · tab: ${s.config.sheet}` : ''))
-          : (s.config.content ? s.config.content.slice(0, 90) + (s.config.content.length > 90 ? '…' : '') : 'Empty');
-        return `<div class="src-item ${s.enabled ? '' : 'src-disabled'}">
-          <div class="src-item-icon">${icon}</div>
-          <div class="src-item-body">
-            <div class="src-item-name">${escHtml(s.name)}</div>
-            <div class="src-item-desc">${escHtml(desc)}</div>
-          </div>
-          <div class="src-item-actions">
-            <label class="tog" title="${s.enabled ? 'Enabled' : 'Disabled'}">
-              <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSrc('${s.id}',this.checked)">
-              <span class="tog-track"></span>
-            </label>
-            <button class="src-del-btn" onclick="deleteSrc('${s.id}')" title="Delete">🗑</button>
-          </div>
-        </div>`;
-      }).join('');
-
-  document.getElementById('modal-body').innerHTML = `
-    <div>
-      <div class="modal-section-label">Your sources (${enabledCount} active)</div>
-      <div style="display:flex;flex-direction:column;gap:8px">${listHtml}</div>
-    </div>
-    <div class="add-src-form">
-      <h4>➕ Add New Source</h4>
-      <div class="form-row">
-        <label>Type</label>
-        <div class="type-selector">
-          <div class="type-opt ${addSrcType==='sheet'?'selected':''}" onclick="setAddSrcType('sheet')">
-            <span class="type-opt-icon">📊</span>Live Sheet
-          </div>
-          <div class="type-opt ${addSrcType==='note'?'selected':''}" onclick="setAddSrcType('note')">
-            <span class="type-opt-icon">📝</span>Note
-          </div>
-        </div>
-      </div>
-      <div class="form-row">
-        <label>Name</label>
-        <input class="form-input" type="text" id="src-name" placeholder="e.g. Store Rules, Event Dates, Opening Hours…">
-      </div>
-      <div id="src-type-fields">${renderAddFields()}</div>
-      <div class="form-row" style="margin-top:14px">
-        <button class="add-src-btn" onclick="addSrc()">Add Source</button>
-      </div>
-    </div>`;
-}
-
-function renderAddFields() {
-  if (addSrcType === 'sheet') {
-    return `
-      <div class="form-row">
-        <label>Google Sheets URL</label>
-        <input class="form-input" type="url" id="src-url" placeholder="https://docs.google.com/spreadsheets/d/…">
-      </div>
-      <div class="form-row">
-        <label>Sheet Tab Name <span style="font-weight:400;text-transform:none">(leave blank for first tab)</span></label>
-        <input class="form-input" type="text" id="src-sheet" placeholder="Sheet1">
-      </div>
-      <div class="test-row">
-        <button class="test-btn" onclick="testSheetConnection()">🔍 Test Connection</button>
-      </div>
-      <div class="test-result" id="test-result"></div>`;
-  } else {
-    return `
-      <div class="form-row">
-        <label>Content</label>
-        <textarea class="form-input" id="src-content" placeholder="Write anything the AI should know — store rules, opening hours, upcoming events, staff policies, special instructions…"></textarea>
-      </div>`;
-  }
-}
-
-function setAddSrcType(type) {
-  addSrcType = type;
-  document.getElementById('src-type-fields').innerHTML = renderAddFields();
-  document.querySelectorAll('.type-opt').forEach(el => el.classList.remove('selected'));
-  const opts = document.querySelectorAll('.type-opt');
-  if (type === 'sheet' && opts[0]) opts[0].classList.add('selected');
-  if (type === 'note'  && opts[1]) opts[1].classList.add('selected');
-}
-
-// ── Test a Google Sheet connection ────────────────────────────────────────
-async function testSheetConnection() {
-  const url = document.getElementById('src-url')?.value?.trim();
-  const sheet = document.getElementById('src-sheet')?.value?.trim();
-  const el = document.getElementById('test-result');
-  if (!el) return;
-  if (!url) { el.textContent = '⚠️ Paste a Google Sheets URL first'; el.className = 'test-result show err'; return; }
-  el.textContent = '⏳ Connecting…'; el.className = 'test-result show';
-  try {
-    const csv = await fetchSheetCsv(url, sheet);
-    const lines = csv.split('\n').filter(l => l.trim());
-    el.textContent = `✅ Connected! ${lines.length} rows found.\nFirst row: ${lines[0]?.slice(0, 120)}`;
-    el.className = 'test-result show ok';
-  } catch (err) {
-    el.textContent = `❌ ${err.message}`;
-    el.className = 'test-result show err';
-  }
 }
 
 // ── Fetch a Google Sheet as CSV ───────────────────────────────────────────
@@ -847,15 +653,6 @@ function deleteSrc(id) {
   if (!confirm('Delete this source?')) return;
   saveSources(getSources().filter(s => s.id !== id));
   renderModal();
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────
-function shortenUrl(url) {
-  try {
-    const u = new URL(url);
-    const path = u.pathname.length > 28 ? u.pathname.slice(0, 28) + '…' : u.pathname;
-    return u.hostname + path;
-  } catch { return url.slice(0, 45) + (url.length > 45 ? '…' : ''); }
 }
 
 // ── Fetch all enabled sources → returns text block for system prompt ───────
