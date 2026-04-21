@@ -17,25 +17,25 @@ CREATE TABLE IF NOT EXISTS sales (
 -- ── RLS ───────────────────────────────────────────────────────────────────
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 
--- All authenticated users can read (staff can see sales context)
+-- All authenticated users can read
 CREATE POLICY "Authenticated can read sales" ON sales
   FOR SELECT TO authenticated USING (true);
 
--- Only managers can insert/update/delete
+-- Only managers can insert/update/delete (using auth.jwt() — no auth.users join needed)
 CREATE POLICY "Managers can insert sales" ON sales
   FOR INSERT TO authenticated
-  WITH CHECK (
-    EXISTS (SELECT 1 FROM staff WHERE auth_id = auth.uid() AND is_manager = true)
-  );
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM staff s WHERE s.email = auth.jwt()->>'email' AND s.is_manager = true
+  ));
 
 CREATE POLICY "Managers can update sales" ON sales
   FOR UPDATE TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM staff WHERE auth_id = auth.uid() AND is_manager = true)
-  );
+  USING (EXISTS (
+    SELECT 1 FROM staff s WHERE s.email = auth.jwt()->>'email' AND s.is_manager = true
+  ));
 
 CREATE POLICY "Managers can delete sales" ON sales
   FOR DELETE TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM staff WHERE auth_id = auth.uid() AND is_manager = true)
-  );
+  USING (EXISTS (
+    SELECT 1 FROM staff s WHERE s.email = auth.jwt()->>'email' AND s.is_manager = true
+  ));
