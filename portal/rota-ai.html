@@ -56,6 +56,20 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 .quick-btn:last-child { margin-bottom: 0; }
 .quick-btn:hover { background: #e8ebff; border-color: #667eea; color: #333; }
 
+/* ── Chat History ── */
+.new-chat-btn { width: 100%; background: #667eea; color: white; border: none; border-radius: 9px; padding: 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.new-chat-btn:hover { background: #5a6fd6; }
+.hist-list { display: flex; flex-direction: column; gap: 4px; }
+.hist-item { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent; transition: all 0.12s; }
+.hist-item:hover { background: #f0f0ff; border-color: #e0e4ff; }
+.hist-item.hist-active { background: #e8ebff; border-color: #667eea; }
+.hist-item-body { flex: 1; min-width: 0; }
+.hist-title { font-size: 12px; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-meta  { font-size: 10px; color: #aaa; margin-top: 1px; }
+.hist-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 13px; flex-shrink: 0; line-height: 1; padding: 2px; border-radius: 4px; }
+.hist-del:hover { color: #ef4444; background: #fff0f0; }
+.hist-empty { font-size: 11px; color: #ccc; text-align: center; padding: 8px 0; }
+
 /* Chat panel */
 .chat-panel { flex: 1; display: flex; flex-direction: column; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.06); min-width: 0; }
 .chat-header { padding: 16px 20px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
@@ -182,6 +196,12 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
     </div>
 
     <div class="panel-card">
+      <h3>💬 Recent Chats</h3>
+      <button class="new-chat-btn" onclick="startNewChat()">＋ New Chat</button>
+      <div class="hist-list" id="hist-list"></div>
+    </div>
+
+    <div class="panel-card">
       <h3>⚡ Quick Prompts</h3>
       <button class="quick-btn" onclick="quickPrompt('Generate a fair ROTA draft for this week based on the availability data. Show it as a table with each staff member\'s shifts per day (Morning / Mid / Evening / Off). Explain your reasoning.')">📋 Generate ROTA draft</button>
       <button class="quick-btn" onclick="quickPrompt('Who is available each day this week? Give me a day-by-day breakdown showing who is available in the morning and who is available in the evening.')">🌅 Daily availability breakdown</button>
@@ -202,7 +222,7 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
         <p>Powered by Claude AI · Bingsoo Cafe</p>
       </div>
       <div class="model-badge">Claude Haiku</div>
-      <button class="clear-btn" onclick="clearChat(true)">🗑 Clear chat</button>
+      <button class="clear-btn" onclick="startNewChat()">＋ New Chat</button>
     </div>
 
     <div class="chat-messages" id="chat-messages">
@@ -291,6 +311,7 @@ async function init() {
 
   populateWeeks();
   renderSrcPreview();
+  renderHistory();
   restoreSession();
 }
 
@@ -298,9 +319,13 @@ function restoreSession() {
   const s = loadSession();
   if (!s || !s.conversationHistory?.length) return;
 
-  conversationHistory = s.conversationHistory;
-  systemPrompt        = s.systemPrompt  || '';
-  contextLoaded       = s.contextLoaded || false;
+  conversationHistory  = s.conversationHistory;
+  systemPrompt         = s.systemPrompt  || '';
+  contextLoaded        = s.contextLoaded || false;
+  currentWeekLabel     = s.weekLabel || '';
+  // Re-link to existing conversation entry if possible
+  const convs = getConversations();
+  if (convs.length > 0 && !currentConvId) currentConvId = convs[0].id;
 
   // Restore week selector
   if (s.weekStart) {
@@ -324,6 +349,7 @@ function restoreSession() {
     msgs.appendChild(div);
   });
   msgs.scrollTop = msgs.scrollHeight;
+  renderHistory();
 
   // Update status if context was loaded
   if (contextLoaded) {
@@ -376,6 +402,7 @@ async function loadContext() {
     const weekEnd = fmtDate(new Date(d.getTime() + 6*86400000));
     const dates   = DAYS.map((_, i) => fmtDate(new Date(d.getTime() + i*86400000)));
     const weekLabel = `${fmtShort(d)} – ${fmtShort(new Date(d.getTime() + 6*86400000))}`;
+    currentWeekLabel = weekLabel;
 
     // Also load sales: last 12 weeks for historical patterns
     const salesLookback = fmtDate(new Date(d.getTime() - 84*86400000)); // 12 weeks back
@@ -560,6 +587,7 @@ function appendMsg(role, content) {
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
   saveSession();
+  autoSaveToHistory();
   return div;
 }
 
@@ -654,6 +682,135 @@ function handleKey(e) {
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── Conversation History ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+const CONV_KEY = 'bingsoo_chat_convs_v1';
+let currentConvId  = null;
+let currentWeekLabel = '';
+
+function getConversations() {
+  try { return JSON.parse(localStorage.getItem(CONV_KEY) || '[]'); } catch { return []; }
+}
+function saveConvList(list) {
+  localStorage.setItem(CONV_KEY, JSON.stringify(list.slice(0, 20)));
+}
+
+// Auto-save current chat into history list after every message
+function autoSaveToHistory() {
+  if (!conversationHistory.length) return;
+  const firstUser = conversationHistory.find(m => m.role === 'user');
+  const title = firstUser ? firstUser.content.slice(0, 50) : 'Chat';
+
+  if (!currentConvId) currentConvId = genId();
+
+  const entry = {
+    id: currentConvId,
+    title,
+    weekLabel: currentWeekLabel,
+    savedAt: Date.now(),
+    messages: conversationHistory,
+    systemPrompt,
+  };
+
+  const list = getConversations();
+  const idx  = list.findIndex(c => c.id === currentConvId);
+  if (idx >= 0) list[idx] = entry; else list.unshift(entry);
+  saveConvList(list);
+  renderHistory();
+}
+
+// Start a brand-new chat (archives current one first)
+function startNewChat() {
+  autoSaveToHistory();        // save current before clearing
+  currentConvId   = null;
+  currentWeekLabel = '';
+  clearChat(true);
+  renderHistory();
+}
+
+// Load a saved conversation
+function loadConversation(id) {
+  const conv = getConversations().find(c => c.id === id);
+  if (!conv) return;
+
+  currentConvId    = id;
+  currentWeekLabel = conv.weekLabel || '';
+  conversationHistory = conv.messages || [];
+  systemPrompt     = conv.systemPrompt || '';
+  contextLoaded    = !!systemPrompt;
+
+  // Re-render messages
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = '';
+  conversationHistory.forEach(m => {
+    const isUser = m.role === 'user';
+    const div = document.createElement('div');
+    div.className = `msg ${isUser ? 'user' : 'ai'}`;
+    const rendered = isUser
+      ? escHtml(m.content).replace(/\n/g, '<br>')
+      : (typeof marked !== 'undefined' ? marked.parse(m.content) : escHtml(m.content));
+    div.innerHTML = `<div class="msg-avatar">${isUser ? '👤' : '🤖'}</div>
+      <div class="msg-content"><div class="msg-bubble">${rendered}</div></div>`;
+    msgs.appendChild(div);
+  });
+  msgs.scrollTop = msgs.scrollHeight;
+
+  if (contextLoaded) {
+    const status = document.getElementById('ctx-status');
+    status.textContent = conv.weekLabel ? `✅ Restored — ${conv.weekLabel}` : '✅ Context restored';
+    status.className = 'ctx-status loaded';
+    document.getElementById('no-ctx-warn').classList.remove('show');
+  }
+
+  saveSession();
+  renderHistory();
+}
+
+function deleteConversation(id, e) {
+  e.stopPropagation();
+  const list = getConversations().filter(c => c.id !== id);
+  saveConvList(list);
+  if (currentConvId === id) { currentConvId = null; clearChat(true); }
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('hist-list');
+  if (!el) return;
+  const list = getConversations();
+  if (list.length === 0) {
+    el.innerHTML = `<div class="hist-empty">No chats yet</div>`;
+    return;
+  }
+  el.innerHTML = list.map(c => {
+    const isActive = c.id === currentConvId;
+    const age = fmtAge(c.savedAt);
+    const sub = c.weekLabel ? `${c.weekLabel} · ${age}` : age;
+    return `<div class="hist-item ${isActive ? 'hist-active' : ''}" onclick="loadConversation('${c.id}')">
+      <div class="hist-item-body">
+        <div class="hist-title">${escHtml(c.title)}</div>
+        <div class="hist-meta">${escHtml(sub)}</div>
+      </div>
+      <button class="hist-del" onclick="deleteConversation('${c.id}',event)" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function fmtAge(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1)   return 'just now';
+  if (m < 60)  return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function genId() {
+  return Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
