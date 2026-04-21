@@ -68,6 +68,9 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 .hist-meta  { font-size: 10px; color: #aaa; margin-top: 1px; }
 .hist-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 13px; flex-shrink: 0; line-height: 1; padding: 2px; border-radius: 4px; }
 .hist-del:hover { color: #ef4444; background: #fff0f0; }
+.hist-ren { background: none; border: none; color: #ccc; cursor: pointer; font-size: 13px; flex-shrink: 0; line-height: 1; padding: 2px; border-radius: 4px; }
+.hist-ren:hover { color: #667eea; background: #f0f0ff; }
+.hist-title-input { font-size: 12px; font-weight: 600; color: #333; border: 1.5px solid #667eea; border-radius: 5px; padding: 1px 5px; width: 100%; outline: none; font-family: inherit; background: white; }
 .hist-empty { font-size: 11px; color: #ccc; text-align: center; padding: 8px 0; }
 
 /* Chat panel */
@@ -769,6 +772,29 @@ function loadConversation(id) {
   renderHistory();
 }
 
+function renameConversation(id, e) {
+  e.stopPropagation();
+  const titleEl = document.getElementById(`hist-title-${id}`);
+  if (!titleEl) return;
+  const current = titleEl.textContent;
+
+  // Replace with input
+  titleEl.innerHTML = `<input class="hist-title-input" id="hist-input-${id}" value="${escHtml(current)}" maxlength="60">`;
+  const input = document.getElementById(`hist-input-${id}`);
+  input.focus(); input.select();
+
+  function save() {
+    const newTitle = input.value.trim() || current;
+    const list = getConversations();
+    const c = list.find(x => x.id === id);
+    if (c) { c.title = newTitle; saveConvList(list); }
+    renderHistory();
+  }
+  input.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); save(); } if (ev.key === 'Escape') renderHistory(); });
+  input.addEventListener('blur', save);
+  input.addEventListener('click', ev => ev.stopPropagation());
+}
+
 function deleteConversation(id, e) {
   e.stopPropagation();
   const list = getConversations().filter(c => c.id !== id);
@@ -791,9 +817,10 @@ function renderHistory() {
     const sub = c.weekLabel ? `${c.weekLabel} · ${age}` : age;
     return `<div class="hist-item ${isActive ? 'hist-active' : ''}" onclick="loadConversation('${c.id}')">
       <div class="hist-item-body">
-        <div class="hist-title">${escHtml(c.title)}</div>
+        <div class="hist-title" id="hist-title-${c.id}">${escHtml(c.title)}</div>
         <div class="hist-meta">${escHtml(sub)}</div>
       </div>
+      <button class="hist-ren" onclick="renameConversation('${c.id}',event)" title="Rename">✏️</button>
       <button class="hist-del" onclick="deleteConversation('${c.id}',event)" title="Delete">✕</button>
     </div>`;
   }).join('');
