@@ -75,8 +75,10 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100
 .tog input:checked ~ .tog-track { background: #667eea; }
 .tog input:checked ~ .tog-track::before { transform: translateX(18px); }
 
-.del-btn { background: #fff0f0; border: none; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: #ef4444; display: flex; align-items: center; justify-content: center; }
-.del-btn:hover { background: #fee2e2; }
+.del-btn  { background: #fff0f0; border: none; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: #ef4444; display: flex; align-items: center; justify-content: center; }
+.del-btn:hover  { background: #fee2e2; }
+.edit-btn { background: #f0f0ff; border: none; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: #667eea; display: flex; align-items: center; justify-content: center; }
+.edit-btn:hover { background: #e0e4ff; }
 
 /* ── Add source panel (right) ── */
 .add-panel { background: white; border-radius: 16px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 20px; }
@@ -108,8 +110,10 @@ textarea.form-input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .test-result.ok  { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
 .test-result.err { color: #dc2626; border-color: #fecaca; background: #fff5f5; }
 
-.add-btn { width: 100%; background: #667eea; color: white; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
-.add-btn:hover { background: #5a6fd6; }
+.add-btn    { width: 100%; background: #667eea; color: white; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
+.add-btn:hover    { background: #5a6fd6; }
+.cancel-btn { width: 100%; background: #f3f4f6; color: #666; border: none; border-radius: 10px; padding: 9px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 6px; }
+.cancel-btn:hover { background: #e5e7eb; }
 
 /* Info box */
 .info-box { background: #f8f9ff; border: 1px solid #e0e4ff; border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 12px; color: #666; line-height: 1.6; }
@@ -158,7 +162,7 @@ textarea.form-input { resize: vertical; min-height: 110px; line-height: 1.5; }
 
   <!-- ── Right: Add panel ── -->
   <div class="add-panel">
-    <h3>➕ Add New Source</h3>
+    <h3 id="panel-title">➕ Add New Source</h3>
 
     <div class="type-selector">
       <div class="type-opt selected" id="opt-sheet" onclick="setType('sheet')">
@@ -180,7 +184,8 @@ textarea.form-input { resize: vertical; min-height: 110px; line-height: 1.5; }
       <!-- rendered by JS -->
     </div>
 
-    <button class="add-btn" onclick="addSource()">Add Source</button>
+    <button class="add-btn" id="submit-btn" onclick="submitSource()">Add Source</button>
+    <button class="cancel-btn" id="cancel-btn" onclick="cancelEdit()" style="display:none">Cancel</button>
 
     <div class="info-box">
       <strong>📊 Live Sheet</strong> — paste a public Google Sheets link. Data is fetched fresh every time you load a week in AI Assistant.<br><br>
@@ -196,6 +201,7 @@ const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentType = 'sheet';
+let currentEditId = null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 async function logout() {
@@ -269,7 +275,8 @@ async function renderSources() {
             <input type="checkbox" ${s.is_enabled ? 'checked' : ''} onchange="toggleSource('${s.id}', this.checked)">
             <span class="tog-track"></span>
           </label>
-          <button class="del-btn" onclick="deleteSource('${s.id}','${esc(s.name)}')" title="Delete">🗑</button>
+          <button class="edit-btn" onclick="startEdit('${s.id}')" title="Edit">✏️</button>
+          <button class="del-btn"  onclick="deleteSource('${s.id}','${esc(s.name)}')" title="Delete">🗑</button>
         </div>
       </div>`;
   }).join('');
@@ -375,6 +382,51 @@ async function testLink() {
   }
 }
 
+// ── Edit mode ─────────────────────────────────────────────────────────────
+async function startEdit(id) {
+  const { data: sources } = await sb.from('context_sources').select('*').eq('id', id).limit(1);
+  if (!sources?.length) return;
+  const s = sources[0];
+  currentEditId = id;
+
+  // Switch type
+  setType(s.type);
+
+  // Fill in name
+  document.getElementById('src-name').value = s.name;
+
+  // Fill in type-specific fields (after renderTypeFields ran inside setType)
+  if (s.type === 'sheet') {
+    document.getElementById('src-url').value   = s.config.url   || '';
+    document.getElementById('src-sheet').value = s.config.sheet || '';
+  } else {
+    document.getElementById('src-content').value = s.config.content || '';
+    document.getElementById('src-link').value     = s.config.link    || '';
+  }
+
+  // Update panel UI
+  document.getElementById('panel-title').textContent = '✏️ Edit Source';
+  document.getElementById('submit-btn').textContent  = 'Save Changes';
+  document.getElementById('cancel-btn').style.display = 'block';
+
+  // Scroll panel into view on mobile
+  document.querySelector('.add-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelEdit() {
+  currentEditId = null;
+  document.getElementById('panel-title').textContent  = '➕ Add New Source';
+  document.getElementById('submit-btn').textContent   = 'Add Source';
+  document.getElementById('cancel-btn').style.display = 'none';
+  document.getElementById('src-name').value = '';
+  renderTypeFields();
+}
+
+function submitSource() {
+  if (currentEditId) saveEdit();
+  else addSource();
+}
+
 // ── CRUD (Supabase) ───────────────────────────────────────────────────────
 async function addSource() {
   const name = document.getElementById('src-name')?.value?.trim();
@@ -392,7 +444,7 @@ async function addSource() {
     config = { content: content || '', link: link || '' };
   }
 
-  const btn = document.querySelector('.add-btn');
+  const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
 
   const { error } = await sb.from('context_sources').insert({
@@ -400,11 +452,41 @@ async function addSource() {
   });
 
   btn.disabled = false; btn.textContent = 'Add Source';
-
   if (error) { alert('Error saving: ' + error.message); return; }
 
   document.getElementById('src-name').value = '';
   renderTypeFields();
+  await renderSources();
+}
+
+async function saveEdit() {
+  const id   = currentEditId;
+  const name = document.getElementById('src-name')?.value?.trim();
+  if (!name) { alert('Please give this source a name.'); return; }
+
+  let config = {};
+  if (currentType === 'sheet') {
+    const url = document.getElementById('src-url')?.value?.trim();
+    if (!url) { alert('Please enter the Google Sheets URL.'); return; }
+    config = { url, sheet: document.getElementById('src-sheet')?.value?.trim() || '' };
+  } else {
+    const content = document.getElementById('src-content')?.value?.trim();
+    const link    = document.getElementById('src-link')?.value?.trim();
+    if (!content && !link) { alert('Please enter some content or a URL to fetch.'); return; }
+    config = { content: content || '', link: link || '' };
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const { error } = await sb.from('context_sources')
+    .update({ name, type: currentType, config, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  btn.disabled = false;
+  if (error) { btn.textContent = 'Save Changes'; alert('Error saving: ' + error.message); return; }
+
+  cancelEdit();
   await renderSources();
 }
 
