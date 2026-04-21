@@ -242,6 +242,36 @@ let conversationHistory = [];
 let contextLoaded = false;
 let systemPrompt   = '';
 
+// ── Session persistence (localStorage) ───────────────────────────────────
+const SESSION_KEY = 'bingsoo_chat_session_v1';
+
+function saveSession() {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      conversationHistory,
+      systemPrompt,
+      contextLoaded,
+      weekStart: document.getElementById('week-select')?.value || '',
+      savedAt: Date.now(),
+    }));
+  } catch {}
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    // Expire after 24 hours
+    if (!s.savedAt || Date.now() - s.savedAt > 86400000) { localStorage.removeItem(SESSION_KEY); return null; }
+    return s;
+  } catch { return null; }
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────
 async function logout() {
   await sb.auth.signOut();
@@ -261,6 +291,47 @@ async function init() {
 
   populateWeeks();
   renderSrcPreview();
+  restoreSession();
+}
+
+function restoreSession() {
+  const s = loadSession();
+  if (!s || !s.conversationHistory?.length) return;
+
+  conversationHistory = s.conversationHistory;
+  systemPrompt        = s.systemPrompt  || '';
+  contextLoaded       = s.contextLoaded || false;
+
+  // Restore week selector
+  if (s.weekStart) {
+    const sel = document.getElementById('week-select');
+    if (sel) { for (const opt of sel.options) { if (opt.value === s.weekStart) { opt.selected = true; break; } } }
+  }
+
+  // Re-render all messages
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = '';
+  conversationHistory.forEach(m => {
+    const isUser = m.role === 'user';
+    const div = document.createElement('div');
+    div.className = `msg ${isUser ? 'user' : 'ai'}`;
+    const rendered = isUser
+      ? escHtml(m.content).replace(/\n/g, '<br>')
+      : (typeof marked !== 'undefined' ? marked.parse(m.content) : escHtml(m.content));
+    div.innerHTML = `
+      <div class="msg-avatar">${isUser ? '👤' : '🤖'}</div>
+      <div class="msg-content"><div class="msg-bubble">${rendered}</div></div>`;
+    msgs.appendChild(div);
+  });
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Update status if context was loaded
+  if (contextLoaded) {
+    const status = document.getElementById('ctx-status');
+    status.textContent = '✅ Session restored from last visit';
+    status.className = 'ctx-status loaded';
+    document.getElementById('no-ctx-warn').classList.remove('show');
+  }
 }
 
 // ── Week selector ─────────────────────────────────────────────────────────
@@ -457,6 +528,9 @@ function clearChat(addEmpty = true) {
   msgs.innerHTML = '';
   conversationHistory = [];
   if (addEmpty) {
+    systemPrompt  = '';
+    contextLoaded = false;
+    clearSession();
     msgs.innerHTML = `<div class="chat-empty" id="empty-state">
       <div class="empty-icon">📅</div>
       <h3>Ready to help with your ROTA</h3>
@@ -485,6 +559,7 @@ function appendMsg(role, content) {
     </div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+  saveSession();
   return div;
 }
 
