@@ -156,10 +156,7 @@ function toggleTheme() {
     document.getElementById('theme-btn').textContent = '☀️';
   }
   // Sync to embedded iframe
-  const frame = document.getElementById('rota-frame');
-  if (frame?.contentWindow) {
-    frame.contentWindow.postMessage({ type: 'bingsoo_theme', dark: !isDark }, '*');
-  }
+  syncDarkToFrame(document.getElementById('rota-frame'));
 }
 
 function initThemeBtn() {
@@ -176,9 +173,23 @@ function loadPage(url, el) {
   document.querySelector('.sidebar').style.display = 'none';
   document.querySelector('.toolbar').style.display = 'none';
   const frame = document.getElementById('rota-frame');
-  frame.onload = null; // portal pages don't need override injection
+  frame.onload = () => syncDarkToFrame(frame);
   frame.src = url + '?embed=1';
   setNavActive(el);
+}
+
+function syncDarkToFrame(frame) {
+  const isDark = document.documentElement.hasAttribute('data-dark');
+  // postMessage for pages that listen
+  try { frame.contentWindow?.postMessage({ type: 'bingsoo_theme', dark: isDark }, '*'); } catch(e) {}
+  // Also set attribute directly (same origin)
+  try {
+    const doc = frame.contentDocument;
+    if (doc?.documentElement) {
+      if (isDark) doc.documentElement.setAttribute('data-dark', '');
+      else doc.documentElement.removeAttribute('data-dark');
+    }
+  } catch(e) {}
 }
 
 function showRota() {
