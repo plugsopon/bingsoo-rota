@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Context Sources — Bingsoo</title>
-<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<script>
+  if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');
+  if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');
+</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -123,14 +126,59 @@ textarea.form-input { resize: vertical; min-height: 110px; line-height: 1.5; }
   .main { grid-template-columns: 1fr; }
   .add-panel { position: static; }
 }
+
+/* ── Dark mode toggle button ── */
+.theme-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 10px; font-size: 16px; cursor: pointer; line-height: 1; }
+.theme-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* ── Dark mode overrides ── */
+[data-dark] body { background: #0f0f1a; }
+[data-dark] .page-header h2 { color: #e8e8f4; }
+[data-dark] .page-header p  { color: #6666aa; }
+[data-dark] .section-title  { color: #555570; }
+
+[data-dark] .src-empty                 { background: #1a1a2e; box-shadow: none; }
+[data-dark] .src-empty h3              { color: #6666aa; }
+[data-dark] .src-empty p               { color: #44445a; }
+
+[data-dark] .src-card                  { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+[data-dark] .src-card:hover            { border-color: #2a2a45; }
+[data-dark] .src-card-name             { color: #e8e8f4; }
+[data-dark] .src-card-desc             { color: #8888aa; }
+[data-dark] .del-btn                   { background: #2a1515; }
+[data-dark] .del-btn:hover             { background: #3a1f1f; }
+[data-dark] .edit-btn                  { background: #1a1a30; }
+[data-dark] .edit-btn:hover            { background: #252545; }
+
+[data-dark] .add-panel                 { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+[data-dark] .add-panel h3              { color: #e8e8f4; }
+[data-dark] .type-opt                  { border-color: #2a2a40; }
+[data-dark] .type-opt:hover:not(.selected) { border-color: #444466; background: #252540; }
+[data-dark] .type-opt.selected         { background: #1e1e3a; }
+[data-dark] .type-opt-label            { color: #8888aa; }
+[data-dark] .form-row label            { color: #666688; }
+[data-dark] .form-input                { background: #141426; border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .form-input:focus          { border-color: #667eea; }
+[data-dark] .form-input::placeholder   { color: #44445a; }
+[data-dark] .test-btn                  { background: #1a1a2e; border-color: #333355; }
+[data-dark] .test-btn:hover            { background: #252545; }
+[data-dark] .test-result               { background: #141426; border-color: #2a2a40; }
+[data-dark] .info-box                  { background: #141426; border-color: #2a2a40; color: #8888aa; }
+[data-dark] .cancel-btn                { background: #252540; color: #8888aa; }
+[data-dark] .cancel-btn:hover          { background: #2e2e50; }
+
+[data-dark] .nav-link                  { background: #1a1a2e; color: #9999ee; border-color: #667eea; }
+[data-dark] .nav-link:hover:not(.active) { background: #252540; }
+[data-dark] .nav-link.active           { background: #667eea; color: white; }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <h1>📚 Context Sources — Bingsoo</h1>
-  <div style="display:flex;align-items:center;gap:12px">
+  <div style="display:flex;align-items:center;gap:10px">
     <span style="font-size:13px;opacity:0.7" id="topbar-name"></span>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
     <button class="logout-btn" onclick="logout()">Sign Out</button>
   </div>
 </div>
@@ -203,6 +251,25 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentType = 'sheet';
 let currentEditId = null;
 
+// ── Theme ─────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.hasAttribute('data-dark');
+  if (isDark) {
+    document.documentElement.removeAttribute('data-dark');
+    localStorage.setItem('bingsoo_theme', 'light');
+    document.getElementById('theme-btn').textContent = '🌙';
+  } else {
+    document.documentElement.setAttribute('data-dark', '');
+    localStorage.setItem('bingsoo_theme', 'dark');
+    document.getElementById('theme-btn').textContent = '☀️';
+  }
+}
+
+function initThemeBtn() {
+  const isDark = document.documentElement.hasAttribute('data-dark');
+  document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────
 async function logout() {
   await sb.auth.signOut();
@@ -216,6 +283,7 @@ async function init() {
   const staff = arr?.[0];
   if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
   document.getElementById('topbar-name').textContent = staff.name;
+  initThemeBtn();
   renderTypeFields();
   await renderSources();
 }
