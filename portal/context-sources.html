@@ -193,9 +193,12 @@ textarea.form-input { resize: vertical; min-height: 110px; line-height: 1.5; }
   <a href="context-sources.html" class="nav-link active">📚 Context Sources</a>
 </div>
 
-<div class="page-header">
-  <h2>Context Sources</h2>
-  <p>Add information that gets sent to the AI every time you use the ROTA Assistant — live Google Sheets, store rules, notes, anything.</p>
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div>
+    <h2>Context Sources</h2>
+    <p>Add information that gets sent to the AI every time you use the ROTA Assistant — live Google Sheets, store rules, notes, anything.</p>
+  </div>
+  <button class="theme-toggle-page" id="theme-btn-page" onclick="toggleTheme()" title="Toggle dark/light mode" style="background:none;border:1.5px solid #dde;border-radius:9px;padding:6px 12px;font-size:18px;cursor:pointer;flex-shrink:0;margin-top:2px">🌙</button>
 </div>
 
 <div class="main">
@@ -254,20 +257,27 @@ let currentEditId = null;
 // ── Theme ─────────────────────────────────────────────────────────────────
 function toggleTheme() {
   const isDark = document.documentElement.hasAttribute('data-dark');
+  const icon = isDark ? '🌙' : '☀️';
   if (isDark) {
     document.documentElement.removeAttribute('data-dark');
     localStorage.setItem('bingsoo_theme', 'light');
-    document.getElementById('theme-btn').textContent = '🌙';
   } else {
     document.documentElement.setAttribute('data-dark', '');
     localStorage.setItem('bingsoo_theme', 'dark');
-    document.getElementById('theme-btn').textContent = '☀️';
   }
+  const b1 = document.getElementById('theme-btn');
+  const b2 = document.getElementById('theme-btn-page');
+  if (b1) b1.textContent = icon;
+  if (b2) b2.textContent = icon;
 }
 
 function initThemeBtn() {
   const isDark = document.documentElement.hasAttribute('data-dark');
-  document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+  const icon = isDark ? '☀️' : '🌙';
+  const b1 = document.getElementById('theme-btn');
+  const b2 = document.getElementById('theme-btn-page');
+  if (b1) b1.textContent = icon;
+  if (b2) b2.textContent = icon;
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────
