@@ -593,6 +593,14 @@ function shortenUrl(url) {
   } catch { return url.slice(0, 50); }
 }
 
+// Sync dark mode from parent frame
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'bingsoo_theme') return;
+  if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
+  else document.documentElement.removeAttribute('data-dark');
+  initThemeBtn();
+});
+
 init();
 </script>
 </body>

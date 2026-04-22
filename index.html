@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bingsoo - ROTA Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');</script>
+<style>
+/* ── Dark mode shell ── */
+[data-dark] body         { background: #0a0a14; }
+[data-dark] .toolbar     { background: #1a1a2e; border-color: #2a2a40; }
+[data-dark] #week-title  { color: #d0d0e8; }
+[data-dark] .btn-out     { color: #8899ee; border-color: #667eea; }
+[data-dark] .btn-out:hover { background: #1e1e3a; }
+[data-dark] .sidebar     { background: #0f0f1e; }
+[data-dark] .sidebar ul li:hover { background: rgba(255,255,255,0.05); }
+</style>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F2F5; }
@@ -90,6 +101,7 @@
       <span class="nav-btn" id="ai-rota-btn" style="display:none" onclick="loadPage('portal/rota-ai.html',this)">🤖 AI Assistant</span>
       <span class="nav-btn" id="sources-btn" style="display:none" onclick="loadPage('portal/context-sources.html',this)">📚 Context Sources</span>
       <span class="nav-btn" id="sales-btn" style="display:none" onclick="loadPage('portal/sales.html',this)">💰 Sales</span>
+      <button class="nav-btn" id="theme-btn" onclick="toggleTheme()" title="Dark / Light mode" style="font-size:1rem;padding:5px 10px">🌙</button>
       <span class="user-name" id="user-name"></span>
       <button class="signout-btn" onclick="signOut()">Sign Out</button>
     </div>
@@ -130,6 +142,30 @@
 const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Dark mode ─────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.hasAttribute('data-dark');
+  if (isDark) {
+    document.documentElement.removeAttribute('data-dark');
+    localStorage.setItem('bingsoo_theme', 'light');
+    document.getElementById('theme-btn').textContent = '🌙';
+  } else {
+    document.documentElement.setAttribute('data-dark', '');
+    localStorage.setItem('bingsoo_theme', 'dark');
+    document.getElementById('theme-btn').textContent = '☀️';
+  }
+  // Sync to embedded iframe
+  const frame = document.getElementById('rota-frame');
+  if (frame?.contentWindow) {
+    frame.contentWindow.postMessage({ type: 'bingsoo_theme', dark: !isDark }, '*');
+  }
+}
+
+function initThemeBtn() {
+  const isDark = document.documentElement.hasAttribute('data-dark');
+  document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+}
 
 function setNavActive(el) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -232,6 +268,7 @@ async function init() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'portal/login.html'; return; }
 
+  initThemeBtn();
   const { data: profileArr } = await sb.rpc('get_my_profile');
   const profile = profileArr?.[0];
   document.getElementById('user-name').textContent = profile?.name || session.user.email;

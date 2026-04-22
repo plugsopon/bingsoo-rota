@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI ROTA Assistant — Bingsoo</title>
-<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<script>
+  if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');
+  if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');
+</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -157,6 +160,32 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 /* ── Sources panel (manage link) ── */
 .manage-src-btn { display: block; width: 100%; background: #f8f9ff; border: 1.5px dashed #c4c9f0; border-radius: 8px; padding: 8px; font-size: 12px; color: #667eea; cursor: pointer; font-weight: 600; text-align: center; text-decoration: none; transition: all 0.15s; }
 .manage-src-btn:hover { background: #e8ebff; border-color: #667eea; }
+
+/* ── Dark mode ── */
+[data-dark] body              { background: #0f0f1a; }
+[data-dark] .chat-area        { background: #0f0f1a; }
+[data-dark] .chat-bubble.ai   { background: #1a1a2e; color: #d0d0e8; }
+[data-dark] .chat-bubble.user { background: #2a1f4a; color: #e8e0ff; }
+[data-dark] .input-bar        { background: #1a1a2e; border-color: #2a2a40; }
+[data-dark] .chat-input       { background: #141426; border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .chat-input::placeholder { color: #44445a; }
+[data-dark] .send-btn         { background: #667eea; }
+[data-dark] .sidebar-panel    { background: #1a1a2e; border-color: #2a2a40; }
+[data-dark] .panel-card       { background: #141426; border-color: #2a2a40; }
+[data-dark] .panel-card-title { color: #d0d0e8; }
+[data-dark] .status-bar       { background: #141426; border-color: #2a2a40; color: #8888aa; }
+[data-dark] .hist-item        { background: #1a1a2e; border-color: #2a2a40; }
+[data-dark] .hist-item:hover  { background: #222238; }
+[data-dark] .hist-item.active { background: #1e1e3a; border-color: #667eea; }
+[data-dark] .hist-title       { color: #d0d0e8; }
+[data-dark] .hist-date        { color: #666688; }
+[data-dark] .src-chip         { background: #1e1e3a; border-color: #2a2a40; }
+[data-dark] .src-chip-name    { color: #d0d0e8; }
+[data-dark] .src-chip-type    { background: #1a1a2e; }
+[data-dark] .manage-src-btn   { background: #141426; border-color: #333355; color: #8899ee; }
+[data-dark] .manage-src-btn:hover { background: #1e1e3a; }
+[data-dark] .nav-link         { background: #1a1a2e; color: #9999ee; }
+[data-dark] .nav-link:hover:not(.active) { background: #252540; }
 </style>
 </head>
 <body>
@@ -957,6 +986,13 @@ async function fetchAllSources() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+
+// Sync dark mode from parent frame
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'bingsoo_theme') return;
+  if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
+  else document.documentElement.removeAttribute('data-dark');
+});
 
 init();
 </script>

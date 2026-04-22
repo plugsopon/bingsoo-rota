@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sales Dashboard — Bingsoo</title>
-<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<script>
+  if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');
+  if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');
+</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -83,6 +86,22 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100
   .stat-card { min-width: 100px; }
   .stat-num { font-size: 20px; }
 }
+
+/* ── Dark mode ── */
+[data-dark] body            { background: #0f0f1a; }
+[data-dark] .container      { color: #d0d0e8; }
+[data-dark] .upload-bar     { background: #1a1a2e; border-color: #2a2a40; }
+[data-dark] .stat-card      { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+[data-dark] .stat-label     { color: #8888aa; }
+[data-dark] .chart-card     { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+[data-dark] .chart-title    { color: #d0d0e8; }
+[data-dark] .table-card     { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+[data-dark] .table-card th  { background: #141426; color: #8888aa; }
+[data-dark] .table-card td  { border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .table-card tr:hover td { background: #1e1e3a; }
+[data-dark] .nav-link       { background: #1a1a2e; color: #9999ee; }
+[data-dark] .nav-link:hover:not(.active) { background: #252540; }
+[data-dark] select, [data-dark] input  { background: #141426; border-color: #2a2a40; color: #d0d0e8; }
 </style>
 </head>
 <body>
@@ -428,6 +447,13 @@ function parseSalesCSV(text) {
   }
   return rows;
 }
+
+// Sync dark mode from parent frame
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'bingsoo_theme') return;
+  if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
+  else document.documentElement.removeAttribute('data-dark');
+});
 
 init();
 </script>
