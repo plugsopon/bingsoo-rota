@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Schedule — Bingsoo Staff</title>
-<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <script>document.addEventListener('DOMContentLoaded',function(){if(document.documentElement.classList.contains('embedded')){document.querySelector('.topbar')?.remove();document.querySelector('.nav-links')?.remove();}});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -135,6 +135,28 @@
   .summary-num { font-size: 22px; }
   .summary-label { font-size: 11px; }
 }
+
+/* ── Dark mode ── */
+[data-dark] body { background: #0f0f1a; color: #d0d0e8; }
+[data-dark] .week-selector { background: #1a1a2e; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+[data-dark] .week-selector label { color: #a0a0c0; }
+[data-dark] .week-selector select {
+  background: #141426; border-color: #2a2a40; color: #d0d0e8;
+}
+[data-dark] .week-selector select:focus { border-color: #667eea; }
+[data-dark] .shift-card { background: #1a1a2e; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+[data-dark] .shift-card.off { opacity: 0.5; }
+[data-dark] .day-name { color: #d0d0e8; }
+[data-dark] .day-date { color: #6666aa; }
+[data-dark] .shift-hours { color: #6666aa; }
+[data-dark] .badge-morning { background: #1e3a5f; color: #93c5fd; }
+[data-dark] .badge-afternoon { background: #3d2d00; color: #fcd34d; }
+[data-dark] .badge-full { background: #064e3b; color: #6ee7b7; }
+[data-dark] .badge-off { background: #1f1f33; color: #6666aa; }
+[data-dark] .no-rota { background: #1a1a2e; color: #6666aa; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+[data-dark] .nav-link { background: #1a1a2e; color: #9090cc; border-color: #3a3a5e; }
+[data-dark] .nav-link:hover,
+[data-dark] .nav-link.active { background: #667eea; color: white; border-color: #667eea; }
 </style>
 </head>
 <body>
@@ -348,6 +370,12 @@ async function init() {
   populateWeeks();
   await loadSchedule();
 }
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'bingsoo_theme') return;
+  if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
+  else document.documentElement.removeAttribute('data-dark');
+});
 
 init();
 </script>

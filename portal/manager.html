@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manager Dashboard — Bingsoo</title>
-<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <script>document.addEventListener('DOMContentLoaded',function(){if(document.documentElement.classList.contains('embedded')){document.querySelector('.topbar')?.remove();document.querySelector('.nav-links')?.remove();}});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -150,6 +150,38 @@
     font-weight: 600;
     color: #667eea;
   }
+
+/* ── Dark mode ── */
+[data-dark] body { background: #0f0f1a; color: #d0d0e8; }
+[data-dark] .toolbar,
+[data-dark] .stat-card,
+[data-dark] .grid-card { background: #1a1a2e; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+[data-dark] .toolbar label { color: #a0a0c0; }
+[data-dark] .toolbar select {
+  background: #141426; border-color: #2a2a40; color: #d0d0e8;
+}
+[data-dark] .toolbar select:focus { border-color: #667eea; }
+[data-dark] .stat-num { color: #d0d0e8; }
+[data-dark] .stat-label { color: #6666aa; }
+[data-dark] .grid-card h2 { color: #d0d0e8; }
+[data-dark] table th {
+  background: #141426; color: #8888aa; border-bottom-color: #2a2a40;
+}
+[data-dark] table td { border-bottom-color: #1f1f33; color: #d0d0e8; }
+[data-dark] tr:hover td { background: #1f1f33; }
+[data-dark] .name-cell { color: #d0d0e8; }
+[data-dark] .coverage-row { background: #141426; color: #8899ff; }
+[data-dark] .slot-none { color: #3a3a5e; }
+[data-dark] .slot-Morning { background: #1e3a5f; color: #93c5fd; }
+[data-dark] .slot-Afternoon { background: #3d2d00; color: #fcd34d; }
+[data-dark] .slot-Allfree { background: #064e3b; color: #6ee7b7; }
+[data-dark] .slot-Off { background: #1f1f33; color: #6666aa; }
+[data-dark] .nav-link { background: #1a1a2e; color: #9090cc; border-color: #3a3a5e; }
+[data-dark] .nav-link:hover,
+[data-dark] .nav-link.active { background: #667eea; color: white; border-color: #667eea; }
+[data-dark] .loading { color: #6666aa; }
+[data-dark] .section-title { color: #6666aa; }
+
 @media (max-width: 768px) {
   .container { padding: 0 12px; }
   .toolbar { flex-direction: column; align-items: stretch; }
@@ -336,6 +368,12 @@ async function init() {
   populateWeeks();
   await loadData();
 }
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'bingsoo_theme') return;
+  if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
+  else document.documentElement.removeAttribute('data-dark');
+});
 
 init();
 </script>

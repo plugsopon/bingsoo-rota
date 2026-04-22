@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Submit Availability — Bingsoo Staff</title>
-<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <!-- Remove embedded-only elements from DOM once parsed -->
 <script>document.addEventListener('DOMContentLoaded',function(){if(document.documentElement.classList.contains('embedded')){document.querySelector('.topbar')?.remove();document.querySelector('.nav-links')?.remove();}});</script>
@@ -197,6 +197,37 @@
     margin-bottom: 6px;
   }
   .greeting-sub { font-size: 14px; color: #666; margin-bottom: 20px; }
+
+/* ── Dark mode ── */
+[data-dark] body { background: #0f0f1a; color: #d0d0e8; }
+[data-dark] .week-selector,
+[data-dark] .day-card,
+[data-dark] .submit-area { background: #1a1a2e; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+[data-dark] .week-selector label { color: #a0a0c0; }
+[data-dark] .week-selector select {
+  background: #141426; border-color: #2a2a40; color: #d0d0e8;
+}
+[data-dark] .week-selector select:focus { border-color: #667eea; }
+[data-dark] .day-label { color: #d0d0e8; }
+[data-dark] .day-label span { color: #6666aa; }
+[data-dark] .slot-btn { background: #141426; border-color: #2a2a40; color: #a0a0c0; }
+[data-dark] .slot-btn:hover { border-color: #667eea; color: #667eea; }
+[data-dark] .slot-btn.selected-morning { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+[data-dark] .slot-btn.selected-afternoon { background: #3d2d00; border-color: #f59e0b; color: #fcd34d; }
+[data-dark] .slot-btn.selected-allfree { background: #064e3b; border-color: #10b981; color: #6ee7b7; }
+[data-dark] .slot-btn.selected-off { background: #450a0a; border-color: #ef4444; color: #fca5a5; }
+[data-dark] .day-note {
+  background: #141426; border-color: #2a2a40; color: #d0d0e8;
+}
+[data-dark] .day-note:focus { border-color: #667eea; background: #1a1a2e; }
+[data-dark] .day-note::placeholder { color: #44446a; }
+[data-dark] .submit-hint { color: #8888aa; }
+[data-dark] .nav-link { background: #1a1a2e; color: #9090cc; border-color: #3a3a5e; }
+[data-dark] .nav-link:hover,
+[data-dark] .nav-link.active { background: #667eea; color: white; border-color: #667eea; }
+[data-dark] .greeting { color: #d0d0e8; }
+[data-dark] .greeting-sub { color: #8888aa; }
+
 @media (max-width: 600px) {
   .container { margin: 16px auto; padding: 0 12px; }
   .greeting { font-size: 18px; }
@@ -434,6 +465,12 @@ async function init() {
   populateWeeks();
   await loadExisting();
 }
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'bingsoo_theme') return;
+  if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
+  else document.documentElement.removeAttribute('data-dark');
+});
 
 init();
 </script>

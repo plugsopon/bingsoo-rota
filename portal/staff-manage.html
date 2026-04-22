@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manage Staff — Bingsoo</title>
-<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <script>document.addEventListener('DOMContentLoaded',function(){if(document.documentElement.classList.contains('embedded')){document.querySelector('.topbar')?.remove();document.querySelector('.nav-links')?.remove();}});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -192,6 +192,54 @@
     .modal-box { padding: 20px; }
     .form-row { flex-direction: column; gap: 0; }
   }
+
+/* ── Dark mode ── */
+[data-dark] body { background: #0f0f1a; color: #d0d0e8; }
+[data-dark] .staff-card { background: #1a1a2e; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+[data-dark] .staff-name { color: #d0d0e8; }
+[data-dark] .staff-email { color: #6666aa; }
+[data-dark] .hours-tag { color: #8888aa; }
+[data-dark] .inline-edit { border-top-color: #2a2a40; }
+[data-dark] .inline-group label { color: #8888aa; }
+[data-dark] .inline-group select,
+[data-dark] .inline-group input {
+  background: #141426; border-color: #2a2a40; color: #d0d0e8;
+}
+[data-dark] .inline-group select:focus,
+[data-dark] .inline-group input:focus { border-color: #667eea; }
+[data-dark] .inline-check { color: #a0a0c0; }
+[data-dark] .cancel-inline-btn { background: #1f1f33; color: #a0a0c0; }
+[data-dark] .edit-btn { background: #0c2340; color: #7dd3fc; border-color: #1a4a6e; }
+[data-dark] .edit-btn:hover { background: #0f2d50; }
+[data-dark] .del-btn { background: #2d0a0a; color: #fca5a5; border-color: #5c1a1a; }
+[data-dark] .del-btn:hover { background: #3d0e0e; }
+[data-dark] .page-header h2 { color: #d0d0e8; }
+[data-dark] .page-header p { color: #8888aa; }
+[data-dark] .modal-box,
+[data-dark] .confirm-box { background: #1a1a2e; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+[data-dark] .modal-title { color: #d0d0e8; }
+[data-dark] .form-group label { color: #a0a0c0; }
+[data-dark] .form-group input,
+[data-dark] .form-group select {
+  background: #141426; border-color: #2a2a40; color: #d0d0e8;
+}
+[data-dark] .form-group input:focus,
+[data-dark] .form-group select:focus { border-color: #667eea; }
+[data-dark] .form-group input:disabled { background: #0f0f1a; color: #44446a; }
+[data-dark] .form-hint { color: #55557a; }
+[data-dark] .checkbox-label { color: #a0a0c0; }
+[data-dark] .divider { border-top-color: #2a2a40; }
+[data-dark] .cancel-btn { background: #1f1f33; color: #a0a0c0; }
+[data-dark] .confirm-box h3 { color: #d0d0e8; }
+[data-dark] .confirm-box p { color: #8888aa; }
+[data-dark] .confirm-cancel { background: #1f1f33; color: #a0a0c0; }
+[data-dark] .empty-state { background: #1a1a2e; color: #8888aa; }
+[data-dark] .nav-link { background: #1a1a2e; color: #9090cc; border-color: #3a3a5e; }
+[data-dark] .nav-link:hover,
+[data-dark] .nav-link.active { background: #667eea; color: white; border-color: #667eea; }
+[data-dark] .visa-badge { background: #0d2d1a; color: #6ee7b7; }
+[data-dark] .visa-badge.restricted { background: #3d2d00; color: #fcd34d; }
+[data-dark] .manager-tag { background: #2d2000; color: #fcd34d; }
 </style>
 </head>
 <body>
@@ -617,6 +665,12 @@ async function init() {
 
   await loadStaff();
 }
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'bingsoo_theme') return;
+  if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
+  else document.documentElement.removeAttribute('data-dark');
+});
 
 init();
 </script>
