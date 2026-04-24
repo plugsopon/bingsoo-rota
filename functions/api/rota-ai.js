@@ -90,7 +90,7 @@ export async function onRequestPost(context) {
       },
       body: JSON.stringify({
         model: chosenModel,
-        max_tokens: 2048,
+        max_tokens: 8192,
         system: system || 'You are a helpful ROTA scheduling assistant for Bingsoo Cafe, a dessert cafe in the UK.',
         messages,
       }),
