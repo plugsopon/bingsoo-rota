@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Edit ROTA — Bingsoo Manager</title>
-<script>if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');</script>
+<script>
+  if(location.search.includes('embed=1'))document.documentElement.classList.add('embedded');
+  if(localStorage.getItem('bingsoo_theme')!=='light')document.documentElement.setAttribute('data-dark','');
+</script>
 <style>.embedded .topbar,.embedded .nav-links{display:none!important}</style>
 <script>document.addEventListener('DOMContentLoaded',function(){if(document.documentElement.classList.contains('embedded')){document.querySelector('.topbar')?.remove();document.querySelector('.nav-links')?.remove();}});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -166,6 +169,23 @@
     .time-input { width: 48px; font-size: 10px; }
     .name-cell { font-size: 12px; padding: 6px 8px; }
   }
+
+/* ── Dark mode ── */
+[data-dark] body          { background: #0f0f1a; }
+[data-dark] .info-bar     { background: #1a1a2e; border-color: #333355; color: #8888aa; }
+[data-dark] .toolbar      { background: #141426; border-color: #2a2a40; }
+[data-dark] .toolbar label { color: #8888aa; }
+[data-dark] .toolbar select { background: #1a1a2e; border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .grid-card    { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+[data-dark] th            { background: #141426; color: #8888aa; border-color: #2a2a40; }
+[data-dark] td            { border-color: #2a2a40; }
+[data-dark] .name-cell    { color: #d0d0e8; background: #141426; }
+[data-dark] .time-input   { background: #0f0f1a; border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .break-select { background: #0f0f1a; border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .save-btn     { background: #667eea; }
+[data-dark] .nav-link     { background: #1a1a2e; color: #9999ee; }
+[data-dark] .nav-link:hover, [data-dark] .nav-link.active { background: #667eea; color: white; }
+[data-dark] .override-row { background: rgba(255,220,80,0.08) !important; }
 </style>
 </head>
 <body>
@@ -558,6 +578,12 @@ async function init() {
   populateWeeks();
   await loadData();
 }
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'bingsoo_theme') return;
+  if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
+  else document.documentElement.removeAttribute('data-dark');
+});
 
 init();
 </script>

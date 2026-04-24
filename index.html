@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bingsoo - ROTA Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>if(localStorage.getItem('bingsoo_theme')==='dark')document.documentElement.setAttribute('data-dark','');</script>
+<script>if(localStorage.getItem('bingsoo_theme')!=='light')document.documentElement.setAttribute('data-dark','');</script>
 <style>
 /* ── Dark mode shell ── */
 [data-dark] body         { background: #0a0a14; }
@@ -101,7 +101,7 @@
       <span class="nav-btn" id="ai-rota-btn" style="display:none" onclick="loadPage('portal/rota-ai.html',this)">🤖 AI Assistant</span>
       <span class="nav-btn" id="sources-btn" style="display:none" onclick="loadPage('portal/context-sources.html',this)">📚 Context Sources</span>
       <span class="nav-btn" id="sales-btn" style="display:none" onclick="loadPage('portal/sales.html',this)">💰 Sales</span>
-      <button class="nav-btn" id="theme-btn" onclick="toggleTheme()" title="Dark / Light mode" style="font-size:1rem;padding:5px 10px">🌙</button>
+      <button class="nav-btn" id="theme-btn" onclick="toggleTheme()" title="Dark / Light mode" style="font-size:1rem;padding:5px 10px">☀️</button>
       <span class="user-name" id="user-name"></span>
       <button class="signout-btn" onclick="signOut()">Sign Out</button>
     </div>
@@ -178,6 +178,24 @@ function loadPage(url, el) {
   setNavActive(el);
 }
 
+const STATIC_ROTA_DARK_CSS = `
+  body { background: #0a0a14 !important; color: #d0d0e8 !important; }
+  .table-wrap { background: #1a1a2e !important; box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important; }
+  .legend-item { background: #1a1a2e !important; color: #c0c0e0 !important; }
+  td { background: #0f0f1a !important; border-color: #2a2a40 !important; color: #d0d0e8 !important; }
+  td.label-demand { background: #141426 !important; color: #8888aa !important; }
+  .demand-cell { border-color: #2a2a40 !important; }
+  .staff-name-cell { border-color: #2a2a40 !important; background: #0f0f1a !important; }
+  tr:nth-child(even) .staff-name-cell,
+  tr:nth-child(even) .hours-cell { background: #141426 !important; }
+  tbody tr:not(.totals-row):not(.demand-row):hover td { background: #1a1a2e !important; }
+  .hours-cell { background: #0f0f1a !important; border-color: #2a2a40 !important; }
+  .totals-row td { background: #141426 !important; border-color: #2a2a40 !important; }
+  .shift-time { color: #a0a0c8 !important; }
+  .shift-hrs { color: #8888cc !important; }
+  .off-badge { background: #1e1e38 !important; color: #6666aa !important; }
+`;
+
 function syncDarkToFrame(frame) {
   const isDark = document.documentElement.hasAttribute('data-dark');
   // postMessage for pages that listen
@@ -185,9 +203,23 @@ function syncDarkToFrame(frame) {
   // Also set attribute directly (same origin)
   try {
     const doc = frame.contentDocument;
-    if (doc?.documentElement) {
-      if (isDark) doc.documentElement.setAttribute('data-dark', '');
-      else doc.documentElement.removeAttribute('data-dark');
+    if (!doc?.documentElement) return;
+    if (isDark) doc.documentElement.setAttribute('data-dark', '');
+    else doc.documentElement.removeAttribute('data-dark');
+    // Inject/remove dark style tag for static output files (no [data-dark] CSS of their own)
+    const isStaticRota = frame.src && frame.src.includes('/output/rota_');
+    if (isStaticRota) {
+      let styleEl = doc.getElementById('bingsoo-dark-inject');
+      if (isDark) {
+        if (!styleEl) {
+          styleEl = doc.createElement('style');
+          styleEl.id = 'bingsoo-dark-inject';
+          doc.head.appendChild(styleEl);
+        }
+        styleEl.textContent = STATIC_ROTA_DARK_CSS;
+      } else {
+        if (styleEl) styleEl.remove();
+      }
     }
   } catch(e) {}
 }
@@ -199,7 +231,7 @@ function showRota() {
   if (firstActive) {
     const file = firstActive.getAttribute('data-file');
     const frame = document.getElementById('rota-frame');
-    frame.onload = () => applyOverrides(frame, file);
+    frame.onload = () => { applyOverrides(frame, file); syncDarkToFrame(frame); };
     frame.src = 'output/' + file;
   }
   setNavActive(document.querySelector('.nav-btn'));
@@ -258,7 +290,7 @@ function loadWeek(path, file, el) {
   document.querySelector('.sidebar').style.display = 'flex';
   document.querySelector('.toolbar').style.display = 'flex';
   const frame = document.getElementById('rota-frame');
-  frame.onload = () => applyOverrides(frame, file);
+  frame.onload = () => { applyOverrides(frame, file); syncDarkToFrame(frame); };
   frame.src = path;
   const lbl = el.querySelector('.wlabel').textContent;
   const wn  = el.querySelector('.wnum').textContent;
