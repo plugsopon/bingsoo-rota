@@ -297,7 +297,7 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
         <h2>AI ROTA Assistant</h2>
         <p>Powered by Claude AI · Bingsoo Cafe</p>
       </div>
-      <div class="model-badge">Claude Haiku</div>
+      <div class="model-badge">Claude AI</div>
       <button class="clear-btn" onclick="startNewChat()">＋ New Chat</button>
     </div>
 
@@ -1028,42 +1028,6 @@ async function fetchSheetCsv(url, sheetName) {
   const res = await fetch(csvUrl);
   if (!res.ok) throw new Error(`Cannot access sheet (${res.status}). Make sure sharing is set to "Anyone with the link can view".`);
   return res.text();
-}
-
-// ── CRUD ──────────────────────────────────────────────────────────────────
-function addSrc() {
-  const name = document.getElementById('src-name')?.value?.trim();
-  if (!name) { alert('Please give this source a name.'); return; }
-
-  const src = { id: genId(), name, type: addSrcType, enabled: true, config: {} };
-
-  if (addSrcType === 'sheet') {
-    const url = document.getElementById('src-url')?.value?.trim();
-    if (!url) { alert('Please enter the Google Sheets URL.'); return; }
-    src.config = { url, sheet: document.getElementById('src-sheet')?.value?.trim() || '' };
-  } else {
-    const content = document.getElementById('src-content')?.value?.trim();
-    if (!content) { alert('Please enter some content for this note.'); return; }
-    src.config = { content };
-  }
-
-  const list = getSources();
-  list.push(src);
-  saveSources(list);
-  addSrcType = 'sheet';
-  renderModal();
-}
-
-function toggleSrc(id, enabled) {
-  const list = getSources();
-  const s = list.find(x => x.id === id);
-  if (s) { s.enabled = enabled; saveSources(list); }
-}
-
-function deleteSrc(id) {
-  if (!confirm('Delete this source?')) return;
-  saveSources(getSources().filter(s => s.id !== id));
-  renderModal();
 }
 
 // ── Fetch all enabled sources → returns text block for system prompt ───────

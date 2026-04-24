@@ -81,20 +81,29 @@ export async function onRequestPost(context) {
       }
     } catch (_) { /* use default */ }
 
-    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: chosenModel,
-        max_tokens: 8192,
-        system: system || 'You are a helpful ROTA scheduling assistant for Bingsoo Cafe, a dessert cafe in the UK.',
-        messages,
-      }),
-    });
+    const claudeController = new AbortController();
+    const claudeTimeout = setTimeout(() => claudeController.abort(), 55_000);
+
+    let claudeRes;
+    try {
+      claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal: claudeController.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: chosenModel,
+          max_tokens: 8192,
+          system: system || 'You are a helpful ROTA scheduling assistant for Bingsoo Cafe, a dessert cafe in the UK.',
+          messages,
+        }),
+      });
+    } finally {
+      clearTimeout(claudeTimeout);
+    }
 
     const claudeData = await claudeRes.json();
 
@@ -112,6 +121,9 @@ export async function onRequestPost(context) {
     });
 
   } catch (err) {
+    if (err.name === 'AbortError') {
+      return json({ error: 'Request timed out — Claude took too long to respond. Please try again.' }, 504);
+    }
     return json({ error: err.message || 'Internal server error' }, 500);
   }
 }

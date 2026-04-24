@@ -508,9 +508,24 @@ function cancelInlineEdit(sid) {
 
 function onInlineVisaChange(sid) {
   const visa = document.getElementById('ie-visa-' + sid).value;
-  const h = VISA_HOURS[visa] ?? 40;
+  const hoursEl = document.getElementById('ie-hours-' + sid);
   if (VISA_RESTRICTED.has(visa)) {
-    document.getElementById('ie-hours-' + sid).value = h;
+    const h = VISA_HOURS[visa] ?? 20;
+    hoursEl.max = h;
+    if (parseInt(hoursEl.value) > h) hoursEl.value = h;
+    // Show hint next to hours input if not already there
+    let hint = document.getElementById('ie-hours-hint-' + sid);
+    if (!hint) {
+      hint = document.createElement('small');
+      hint.id = 'ie-hours-hint-' + sid;
+      hint.style.cssText = 'color:#f59e0b;font-size:10px;display:block;margin-top:2px';
+      hoursEl.parentNode.appendChild(hint);
+    }
+    hint.textContent = `⚠️ Max ${h}h (visa limit)`;
+  } else {
+    hoursEl.max = 48;
+    const hint = document.getElementById('ie-hours-hint-' + sid);
+    if (hint) hint.remove();
   }
 }
 

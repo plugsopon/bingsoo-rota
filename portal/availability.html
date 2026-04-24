@@ -405,6 +405,18 @@ async function submitAvailability() {
 
   const missing = allDates.filter(date => !selections[date]);
   if (missing.length > 0) {
+    // Highlight missing day cards in red and clear after 3s
+    allDates.forEach(date => {
+      const slotsEl = document.getElementById('slots-' + date);
+      if (!slotsEl) return;
+      const card = slotsEl.closest('.day-card');
+      if (!card) return;
+      if (!selections[date]) {
+        card.style.outline = '2px solid #ef4444';
+        card.style.borderRadius = '10px';
+        setTimeout(() => { card.style.outline = ''; }, 3000);
+      }
+    });
     showToast('Please select a slot for every day first.', 'error');
     return;
   }
