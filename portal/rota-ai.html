@@ -792,6 +792,19 @@ async function sendMessage() {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
 
+    // If no week data was loaded, still pull context sources so the AI
+    // can answer about cafe hours, staff rules, weather, etc.
+    let effectiveSystem = systemPrompt;
+    if (!effectiveSystem) {
+      const base = 'You are a helpful ROTA scheduling assistant for Bingsoo Cafe, a dessert cafe in the UK. Answer questions using the context sources below when relevant.';
+      try {
+        const { text: sourcesText } = await fetchAllSources();
+        effectiveSystem = base + (sourcesText || '');
+      } catch (_) {
+        effectiveSystem = base;
+      }
+    }
+
     const res = await fetch('/api/rota-ai', {
       method: 'POST',
       headers: {
@@ -799,7 +812,7 @@ async function sendMessage() {
         'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({
-        system:   systemPrompt || 'You are a helpful ROTA scheduling assistant for Bingsoo Cafe, a dessert cafe in the UK.',
+        system:   effectiveSystem,
         messages: conversationHistory
       })
     });
