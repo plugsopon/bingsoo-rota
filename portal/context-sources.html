@@ -24,6 +24,8 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100
 .topbar h1 { font-size: 17px; font-weight: 700; }
 .logout-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
 .logout-btn:hover { background: rgba(255,255,255,0.25); }
+.theme-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 10px; font-size: 16px; cursor: pointer; line-height: 1; }
+.theme-btn:hover { background: rgba(255,255,255,0.25); }
 
 /* Nav */
 .nav-links { display: flex; gap: 10px; padding: 14px 24px 0; flex-wrap: wrap; flex-shrink: 0; }
@@ -32,149 +34,224 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100
 .nav-link:hover:not(.active) { background: #f0f0ff; }
 
 /* Page header */
-.page-header { padding: 24px 24px 0; }
-.page-header h2 { font-size: 22px; font-weight: 800; color: #1a1a2e; }
-.page-header p { font-size: 13px; color: #888; margin-top: 4px; }
+.page-header {
+  padding: 24px 24px 0; display: flex; justify-content: space-between;
+  align-items: flex-start; gap: 16px; flex-wrap: wrap;
+}
+.page-header-text h2 { font-size: 22px; font-weight: 800; color: #1a1a2e; }
+.page-header-text p  { font-size: 13px; color: #888; margin-top: 4px; max-width: 600px; }
+.add-source-btn {
+  background: #667eea; color: white; border: none; border-radius: 10px;
+  padding: 10px 20px; font-size: 14px; font-weight: 700; cursor: pointer;
+  flex-shrink: 0; box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+  transition: background 0.15s, transform 0.1s;
+}
+.add-source-btn:hover { background: #5a6fd6; }
+.add-source-btn:active { transform: scale(0.97); }
 
-/* Main layout */
-.main { display: grid; grid-template-columns: 1fr 360px; gap: 20px; padding: 20px 24px 32px; align-items: start; }
-
-/* ── Sources list (left) ── */
-.sources-section {}
+/* Main */
+.main { padding: 20px 24px 32px; max-width: 1100px; width: 100%; margin: 0 auto; }
 .section-title { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
-
-.sources-grid { display: flex; flex-direction: column; gap: 10px; }
+.cards-container { display: flex; flex-direction: column; gap: 12px; }
 
 /* Empty state */
-.src-empty { background: white; border-radius: 14px; padding: 40px 24px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-.src-empty .empty-icon { font-size: 44px; margin-bottom: 12px; }
-.src-empty h3 { font-size: 15px; font-weight: 700; color: #888; margin-bottom: 6px; }
-.src-empty p { font-size: 13px; color: #bbb; max-width: 280px; margin: 0 auto; line-height: 1.5; }
+.src-empty { background: white; border-radius: 14px; padding: 50px 24px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.src-empty .empty-icon { font-size: 48px; margin-bottom: 14px; }
+.src-empty h3 { font-size: 16px; font-weight: 700; color: #888; margin-bottom: 6px; }
+.src-empty p  { font-size: 13px; color: #bbb; max-width: 320px; margin: 0 auto; line-height: 1.5; }
 
-/* Source card */
-.src-card {
-  background: white; border-radius: 14px;
-  padding: 16px 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  display: flex; align-items: center; gap: 14px;
-  border: 1.5px solid transparent; transition: border-color 0.15s;
+/* ── Source card (Houdini-style group tab) ── */
+.src-group {
+  background: white; border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  border: 1.5px solid #e5e7eb; overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.src-card:hover { border-color: #e8ebff; }
-.src-card.src-off { opacity: 0.5; }
-.src-card-icon { font-size: 28px; flex-shrink: 0; }
-.src-card-body { flex: 1; min-width: 0; }
-.src-card-name { font-size: 14px; font-weight: 700; color: #1a1a2e; }
-.src-card-meta { display: flex; align-items: center; gap: 7px; margin-top: 4px; }
+.src-group.is-new      { border-color: #667eea; box-shadow: 0 2px 14px rgba(102,126,234,0.18); }
+.src-group.is-dirty    { border-color: #f59e0b; }
+.src-group.src-off     { opacity: 0.55; }
+
+/* Header bar */
+.src-group-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; cursor: pointer;
+  background: #fafbff; border-bottom: 1px solid transparent;
+  user-select: none;
+}
+.src-group.is-open > .src-group-header { border-bottom-color: #e5e7eb; }
+.src-group-header:hover { background: #f3f5ff; }
+.src-group.is-new > .src-group-header { background: #f0f0ff; }
+
+.collapse-arrow {
+  font-size: 11px; color: #888; transition: transform 0.2s;
+  width: 16px; text-align: center; flex-shrink: 0;
+}
+.src-group.is-open > .src-group-header .collapse-arrow { transform: rotate(90deg); }
+
+.src-group-icon { font-size: 22px; flex-shrink: 0; }
+.src-group-title-wrap { flex: 1; min-width: 0; }
+.src-group-title {
+  font-size: 14px; font-weight: 700; color: #1a1a2e;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.src-group-meta { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
 .src-badge { font-size: 10px; font-weight: 700; border-radius: 5px; padding: 2px 7px; flex-shrink: 0; }
 .src-badge.sheet { background: #e8f5e9; color: #2e7d32; }
 .src-badge.note  { background: #fff3e0; color: #e65100; }
-.src-card-desc { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
-.src-card-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.src-badge.draft { background: #ede9fe; color: #5b21b6; }
+.src-group-desc {
+  font-size: 11px; color: #888; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.src-group-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* Toggle */
-.tog { position: relative; width: 40px; height: 22px; cursor: pointer; flex-shrink: 0; }
+.tog { position: relative; width: 38px; height: 22px; cursor: pointer; flex-shrink: 0; }
 .tog input { opacity: 0; width: 0; height: 0; position: absolute; }
 .tog-track { position: absolute; inset: 0; background: #d1d5db; border-radius: 22px; transition: 0.2s; }
 .tog-track::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 .tog input:checked ~ .tog-track { background: #667eea; }
-.tog input:checked ~ .tog-track::before { transform: translateX(18px); }
+.tog input:checked ~ .tog-track::before { transform: translateX(16px); }
 
-.del-btn  { background: #fff0f0; border: none; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: #ef4444; display: flex; align-items: center; justify-content: center; }
-.del-btn:hover  { background: #fee2e2; }
-.edit-btn { background: #f0f0ff; border: none; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: #667eea; display: flex; align-items: center; justify-content: center; }
-.edit-btn:hover { background: #e0e4ff; }
+.icon-btn {
+  background: none; border: none; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 7px;
+  font-size: 14px; display: inline-flex; align-items: center; justify-content: center;
+  color: #888; transition: background 0.15s, color 0.15s;
+}
+.icon-btn:hover { background: #f0f0ff; color: #667eea; }
+.icon-btn.del:hover { background: #fee2e2; color: #ef4444; }
 
-/* ── Add source panel (right) ── */
-.add-panel { background: white; border-radius: 16px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 20px; }
-.add-panel h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 18px; }
+/* Body (collapsed by default) */
+.src-group-body {
+  padding: 0 16px;
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.25s ease, padding 0.25s ease;
+}
+.src-group.is-open > .src-group-body {
+  padding: 18px 16px 16px;
+  max-height: 1400px;
+}
 
-/* Type selector */
-.type-selector { display: flex; gap: 8px; margin-bottom: 16px; }
-.type-opt { flex: 1; padding: 12px 8px; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.15s; }
-.type-opt:hover:not(.selected) { border-color: #c4c9f0; background: #f8f9ff; }
-.type-opt.selected { border-color: #667eea; background: #f0f0ff; }
-.type-opt-icon { font-size: 24px; display: block; margin-bottom: 5px; }
-.type-opt-label { font-size: 12px; font-weight: 700; color: #888; }
-.type-opt.selected .type-opt-label { color: #667eea; }
+/* Type tabs (Houdini style) */
+.type-tabs {
+  display: flex; gap: 0; margin-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+.type-tab {
+  padding: 10px 18px; cursor: pointer; font-size: 13px; font-weight: 600;
+  color: #888; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; transition: all 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.type-tab:hover:not(.active) { color: #555; background: #f8f9ff; }
+.type-tab.active { color: #667eea; border-bottom-color: #667eea; }
 
 /* Form */
-.form-row { margin-bottom: 14px; }
-.form-row label { display: block; font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
-.form-row label span { font-weight: 400; text-transform: none; }
-.form-input { width: 100%; padding: 9px 12px; border: 1.5px solid #e5e7eb; border-radius: 9px; font-size: 13px; font-family: inherit; outline: none; color: #333; background: white; transition: border-color 0.15s; }
+.form-row { margin-bottom: 13px; }
+.form-row label {
+  display: block; font-size: 10px; font-weight: 700; color: #999;
+  text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px;
+}
+.form-row label span { font-weight: 400; text-transform: none; color: #aaa; }
+.form-input {
+  width: 100%; padding: 9px 12px; border: 1.5px solid #e5e7eb;
+  border-radius: 9px; font-size: 13px; font-family: inherit; outline: none;
+  color: #333; background: white; transition: border-color 0.15s;
+}
 .form-input:focus { border-color: #667eea; }
-textarea.form-input { resize: vertical; min-height: 110px; line-height: 1.5; }
+textarea.form-input { resize: vertical; min-height: 90px; line-height: 1.5; }
 
 /* Test connection */
-.test-row { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
-.test-btn { background: #f8f9ff; border: 1.5px solid #e0e4ff; border-radius: 8px; padding: 7px 14px; font-size: 12px; color: #667eea; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.test-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.test-btn {
+  background: #f8f9ff; border: 1.5px solid #e0e4ff; border-radius: 8px;
+  padding: 7px 14px; font-size: 12px; color: #667eea; cursor: pointer;
+  font-weight: 600; white-space: nowrap;
+}
 .test-btn:hover { background: #e8ebff; }
-.test-result { font-size: 11px; padding: 8px 11px; border-radius: 8px; border: 1px solid #e8ebff; margin-top: 8px; max-height: 80px; overflow-y: auto; display: none; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+.test-result {
+  font-size: 11px; padding: 8px 11px; border-radius: 8px;
+  border: 1px solid #e8ebff; margin-top: 8px; max-height: 110px;
+  overflow-y: auto; display: none; white-space: pre-wrap;
+  word-break: break-word; line-height: 1.4;
+}
 .test-result.show { display: block; }
 .test-result.ok  { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
 .test-result.err { color: #dc2626; border-color: #fecaca; background: #fff5f5; }
 
-.add-btn    { width: 100%; background: #667eea; color: white; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
-.add-btn:hover    { background: #5a6fd6; }
-.cancel-btn { width: 100%; background: #f3f4f6; color: #666; border: none; border-radius: 10px; padding: 9px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 6px; }
+/* Save / Cancel */
+.body-actions { display: flex; gap: 8px; margin-top: 14px; }
+.save-btn {
+  flex: 1; background: #667eea; color: white; border: none; border-radius: 9px;
+  padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background 0.15s;
+}
+.save-btn:hover:not(:disabled) { background: #5a6fd6; }
+.save-btn:disabled { background: #a8b0e0; cursor: not-allowed; }
+.cancel-btn {
+  background: #f3f4f6; color: #666; border: none; border-radius: 9px;
+  padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
 .cancel-btn:hover { background: #e5e7eb; }
 
-/* Info box */
-.info-box { background: #f8f9ff; border: 1px solid #e0e4ff; border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 12px; color: #666; line-height: 1.6; }
-.info-box strong { color: #667eea; }
-
-@media (max-width: 860px) {
-  .main { grid-template-columns: 1fr; }
-  .add-panel { position: static; }
-}
-
-/* ── Dark mode toggle button ── */
-.theme-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 10px; font-size: 16px; cursor: pointer; line-height: 1; }
-.theme-btn:hover { background: rgba(255,255,255,0.25); }
-
-/* ── Dark mode overrides ── */
+/* ── Dark mode ── */
 [data-dark] body { background: #0f0f1a; }
-[data-dark] .page-header h2 { color: #e8e8f4; }
-[data-dark] .page-header p  { color: #6666aa; }
+[data-dark] .page-header-text h2 { color: #e8e8f4; }
+[data-dark] .page-header-text p  { color: #6666aa; }
 [data-dark] .section-title  { color: #555570; }
 
 [data-dark] .src-empty                 { background: #1a1a2e; box-shadow: none; }
 [data-dark] .src-empty h3              { color: #6666aa; }
 [data-dark] .src-empty p               { color: #44445a; }
 
-[data-dark] .src-card                  { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
-[data-dark] .src-card:hover            { border-color: #2a2a45; }
-[data-dark] .src-card-name             { color: #e8e8f4; }
-[data-dark] .src-card-desc             { color: #8888aa; }
-[data-dark] .del-btn                   { background: #2a1515; }
-[data-dark] .del-btn:hover             { background: #3a1f1f; }
-[data-dark] .edit-btn                  { background: #1a1a30; }
-[data-dark] .edit-btn:hover            { background: #252545; }
+[data-dark] .src-group                 { background: #1a1a2e; border-color: #2a2a40; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+[data-dark] .src-group.is-new          { border-color: #667eea; }
+[data-dark] .src-group.is-dirty        { border-color: #f59e0b; }
+[data-dark] .src-group-header         { background: #141426; }
+[data-dark] .src-group.is-open > .src-group-header { border-bottom-color: #2a2a40; }
+[data-dark] .src-group-header:hover   { background: #1e1e3a; }
+[data-dark] .src-group.is-new > .src-group-header { background: #1e1e3a; }
+[data-dark] .src-group-title          { color: #e8e8f4; }
+[data-dark] .src-group-desc           { color: #8888aa; }
+[data-dark] .collapse-arrow           { color: #6666aa; }
 
-[data-dark] .add-panel                 { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-[data-dark] .add-panel h3              { color: #e8e8f4; }
-[data-dark] .type-opt                  { border-color: #2a2a40; }
-[data-dark] .type-opt:hover:not(.selected) { border-color: #444466; background: #252540; }
-[data-dark] .type-opt.selected         { background: #1e1e3a; }
-[data-dark] .type-opt-label            { color: #8888aa; }
-[data-dark] .form-row label            { color: #666688; }
-[data-dark] .form-input                { background: #141426; border-color: #2a2a40; color: #d0d0e8; }
-[data-dark] .form-input:focus          { border-color: #667eea; }
-[data-dark] .form-input::placeholder   { color: #44445a; }
-[data-dark] .test-btn                  { background: #1a1a2e; border-color: #333355; }
-[data-dark] .test-btn:hover            { background: #252545; }
-[data-dark] .test-result               { background: #141426; border-color: #2a2a40; }
-[data-dark] .info-box                  { background: #141426; border-color: #2a2a40; color: #8888aa; }
-[data-dark] .cancel-btn                { background: #252540; color: #8888aa; }
-[data-dark] .cancel-btn:hover          { background: #2e2e50; }
+[data-dark] .icon-btn                 { color: #8888aa; }
+[data-dark] .icon-btn:hover           { background: #1e1e3a; color: #9999ee; }
+[data-dark] .icon-btn.del:hover       { background: #3a1f1f; color: #f87171; }
 
-[data-dark] .nav-link                  { background: #1a1a2e; color: #9999ee; border-color: #667eea; }
+[data-dark] .type-tabs                { border-bottom-color: #2a2a40; }
+[data-dark] .type-tab                 { color: #8888aa; }
+[data-dark] .type-tab:hover:not(.active) { color: #d0d0e8; background: #141426; }
+[data-dark] .type-tab.active          { color: #9999ee; border-bottom-color: #667eea; }
+
+[data-dark] .form-row label           { color: #666688; }
+[data-dark] .form-row label span      { color: #44445a; }
+[data-dark] .form-input               { background: #141426; border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .form-input:focus         { border-color: #667eea; }
+[data-dark] .form-input::placeholder  { color: #44445a; }
+[data-dark] .test-btn                 { background: #1a1a2e; border-color: #333355; color: #9999ee; }
+[data-dark] .test-btn:hover           { background: #252545; }
+[data-dark] .test-result              { background: #141426; border-color: #2a2a40; }
+[data-dark] .cancel-btn               { background: #252540; color: #8888aa; }
+[data-dark] .cancel-btn:hover         { background: #2e2e50; }
+
+[data-dark] .nav-link                 { background: #1a1a2e; color: #9999ee; border-color: #667eea; }
 [data-dark] .nav-link:hover:not(.active) { background: #252540; }
-[data-dark] .nav-link.active           { background: #667eea; color: white; }
+[data-dark] .nav-link.active          { background: #667eea; color: white; }
+
 [data-dark] *::-webkit-scrollbar { width: 10px; height: 10px; }
 [data-dark] *::-webkit-scrollbar-track { background: #0f0f1a; }
 [data-dark] *::-webkit-scrollbar-thumb { background: #2a2a40; border-radius: 5px; }
 [data-dark] *::-webkit-scrollbar-thumb:hover { background: #3a3a55; }
 [data-dark] { scrollbar-color: #2a2a40 #0f0f1a; }
+
+@media (max-width: 640px) {
+  .page-header { flex-direction: column; align-items: stretch; }
+  .add-source-btn { width: 100%; }
+  .src-group-header { flex-wrap: wrap; }
+  .src-group-desc { display: none; }
+}
 </style>
 </head>
 <body>
@@ -199,53 +276,16 @@ textarea.form-input { resize: vertical; min-height: 110px; line-height: 1.5; }
 </div>
 
 <div class="page-header">
-  <h2>Context Sources</h2>
-  <p>Add information that gets sent to the AI every time you use the ROTA Assistant — live Google Sheets, store rules, notes, anything.</p>
+  <div class="page-header-text">
+    <h2>Context Sources</h2>
+    <p>Add information that gets sent to the AI every time you use the ROTA Assistant — live Google Sheets, store rules, notes, anything.</p>
+  </div>
+  <button class="add-source-btn" onclick="addNewCard()">＋ Add Source</button>
 </div>
 
 <div class="main">
-
-  <!-- ── Left: Sources list ── -->
-  <div class="sources-section">
-    <div class="section-title" id="list-label">Your sources</div>
-    <div class="sources-grid" id="sources-grid">
-      <!-- rendered by JS -->
-    </div>
-  </div>
-
-  <!-- ── Right: Add panel ── -->
-  <div class="add-panel">
-    <h3 id="panel-title">➕ Add New Source</h3>
-
-    <div class="type-selector">
-      <div class="type-opt selected" id="opt-sheet" onclick="setType('sheet')">
-        <span class="type-opt-icon">📊</span>
-        <span class="type-opt-label">Live Sheet</span>
-      </div>
-      <div class="type-opt" id="opt-note" onclick="setType('note')">
-        <span class="type-opt-icon">📝</span>
-        <span class="type-opt-label">Note</span>
-      </div>
-    </div>
-
-    <div class="form-row">
-      <label>Name</label>
-      <input class="form-input" type="text" id="src-name" placeholder="e.g. Store Rules, Event Schedule…">
-    </div>
-
-    <div id="type-fields">
-      <!-- rendered by JS -->
-    </div>
-
-    <button class="add-btn" id="submit-btn" onclick="submitSource()">Add Source</button>
-    <button class="cancel-btn" id="cancel-btn" onclick="cancelEdit()" style="display:none">Cancel</button>
-
-    <div class="info-box">
-      <strong>📊 Live Sheet</strong> — paste a public Google Sheets link. Data is fetched fresh every time you load a week in AI Assistant.<br><br>
-      <strong>📝 Note</strong> — type anything: opening hours, staff rules, upcoming events, policies. Always included in AI context.
-    </div>
-  </div>
-
+  <div class="section-title" id="list-label">Your sources</div>
+  <div class="cards-container" id="cards-container"></div>
 </div>
 
 <script>
@@ -253,13 +293,15 @@ const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let currentType = 'sheet';
-let currentEditId = null;
+// In-memory state — array of source objects (saved + drafts)
+// Saved source: { id, name, type, config, is_enabled, ... }
+// Draft (new):  { id: 'new-<n>', _draft: true, name:'', type:'sheet', config:{}, is_enabled:true }
+let sources = [];
+let draftCounter = 0;
 
 // ── Theme ─────────────────────────────────────────────────────────────────
 function toggleTheme() {
   const isDark = document.documentElement.hasAttribute('data-dark');
-  const icon = isDark ? '🌙' : '☀️';
   if (isDark) {
     document.documentElement.removeAttribute('data-dark');
     localStorage.setItem('bingsoo_theme', 'light');
@@ -267,26 +309,16 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-dark', '');
     localStorage.setItem('bingsoo_theme', 'dark');
   }
-  const b1 = document.getElementById('theme-btn');
-  const b2 = document.getElementById('theme-btn-page');
-  if (b1) b1.textContent = icon;
-  if (b2) b2.textContent = icon;
+  initThemeBtn();
 }
-
 function initThemeBtn() {
   const isDark = document.documentElement.hasAttribute('data-dark');
-  const icon = isDark ? '☀️' : '🌙';
-  const b1 = document.getElementById('theme-btn');
-  const b2 = document.getElementById('theme-btn-page');
-  if (b1) b1.textContent = icon;
-  if (b2) b2.textContent = icon;
+  const b = document.getElementById('theme-btn');
+  if (b) b.textContent = isDark ? '☀️' : '🌙';
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────
-async function logout() {
-  await sb.auth.signOut();
-  window.location.href = 'login.html';
-}
+async function logout() { await sb.auth.signOut(); window.location.href = 'login.html'; }
 
 async function init() {
   const { data: { session } } = await sb.auth.getSession();
@@ -296,120 +328,335 @@ async function init() {
   if (!staff?.is_manager) { window.location.href = 'availability.html'; return; }
   document.getElementById('topbar-name').textContent = staff.name;
   initThemeBtn();
-  renderTypeFields();
-  await renderSources();
+  await loadSources();
 }
 
-// ── Render source list (reads from Supabase) ──────────────────────────────
-async function renderSources() {
-  const grid  = document.getElementById('sources-grid');
-  const label = document.getElementById('list-label');
-  grid.innerHTML = `<div style="text-align:center;padding:20px;color:#bbb;font-size:13px">Loading…</div>`;
-
-  const { data: sources, error } = await sb
-    .from('context_sources')
-    .select('*')
-    .order('created_at');
-
+// ── Load from Supabase ───────────────────────────────────────────────────
+async function loadSources() {
+  const container = document.getElementById('cards-container');
+  container.innerHTML = `<div style="text-align:center;padding:24px;color:#bbb;font-size:13px">Loading…</div>`;
+  const { data, error } = await sb.from('context_sources').select('*').order('created_at');
   if (error) {
-    grid.innerHTML = `<div style="color:#ef4444;font-size:13px;padding:12px">Error: ${esc(error.message)}</div>`;
+    container.innerHTML = `<div style="color:#ef4444;padding:12px">Error: ${esc(error.message)}</div>`;
     return;
   }
+  sources = (data || []).map(s => ({ ...s, _draft: false }));
+  renderAll();
+}
 
-  const enabled = (sources || []).filter(s => s.is_enabled).length;
-  label.textContent = `Your sources — ${enabled} active, ${(sources||[]).length} total`;
+// ── Render whole list ────────────────────────────────────────────────────
+function renderAll() {
+  const container = document.getElementById('cards-container');
+  const label = document.getElementById('list-label');
+  const drafts = sources.filter(s => s._draft).length;
+  const saved  = sources.filter(s => !s._draft);
+  const enabled = saved.filter(s => s.is_enabled).length;
+  label.textContent = drafts > 0
+    ? `Your sources — ${enabled} active, ${saved.length} saved · ${drafts} unsaved draft${drafts>1?'s':''}`
+    : `Your sources — ${enabled} active, ${saved.length} total`;
 
-  if (!sources || sources.length === 0) {
-    grid.innerHTML = `
+  if (sources.length === 0) {
+    container.innerHTML = `
       <div class="src-empty">
         <div class="empty-icon">📭</div>
         <h3>No sources yet</h3>
-        <p>Add your first source using the panel on the right — a Google Sheet or a note.</p>
+        <p>Click <strong>＋ Add Source</strong> above to add your first Google Sheet or note.</p>
       </div>`;
     return;
   }
 
-  grid.innerHTML = sources.map(s => {
-    const isSheet = s.type === 'sheet';
-    const icon  = isSheet ? '📊' : '📝';
-    const badge = isSheet ? 'sheet' : 'note';
-    const lbl   = isSheet ? 'Live Sheet' : 'Note';
-    const desc  = isSheet
-      ? (s.config.url ? shortenUrl(s.config.url) + (s.config.sheet ? ` · tab: ${s.config.sheet}` : '') : 'No URL set')
-      : (s.config.link
-          ? `🔗 ${shortenUrl(s.config.link)}${s.config.content ? ' + note' : ''}`
-          : (s.config.content ? s.config.content.slice(0, 100) + (s.config.content.length > 100 ? '…' : '') : 'Empty'));
+  container.innerHTML = sources.map(s => renderCard(s)).join('');
+}
 
-    return `
-      <div class="src-card ${s.is_enabled ? '' : 'src-off'}">
-        <div class="src-card-icon">${icon}</div>
-        <div class="src-card-body">
-          <div class="src-card-name">${esc(s.name)}</div>
-          <div class="src-card-meta">
-            <span class="src-badge ${badge}">${lbl}</span>
-            <span class="src-card-desc">${esc(desc)}</span>
+// ── Render one source card ───────────────────────────────────────────────
+function renderCard(s) {
+  const id    = s.id;
+  const isNew = !!s._draft;
+  const open  = !!s._open;
+  const type  = s.type || 'sheet';
+  const cfg   = s.config || {};
+  const dirty = !!s._dirty;
+
+  const icon  = isNew ? '✨' : (type === 'sheet' ? '📊' : '📝');
+  const title = isNew && !s.name ? 'New source (draft)' : (s.name || 'Untitled');
+  const badgeCls = isNew && !s.name ? 'draft' : type;
+  const badgeLbl = isNew && !s.name ? 'Draft' : (type === 'sheet' ? 'Live Sheet / Doc' : 'Note');
+
+  const desc = isNew ? '' : (type === 'sheet'
+    ? (cfg.url ? shortenUrl(cfg.url) + (cfg.sheet ? ` · tab: ${cfg.sheet}` : '') : 'No URL set')
+    : (cfg.link
+        ? `🔗 ${shortenUrl(cfg.link)}${cfg.content ? ' + note' : ''}`
+        : (cfg.content ? cfg.content.slice(0,80) + (cfg.content.length>80?'…':'') : 'Empty')));
+
+  const classes = [
+    'src-group',
+    open ? 'is-open' : '',
+    isNew ? 'is-new' : '',
+    dirty ? 'is-dirty' : '',
+    !isNew && !s.is_enabled ? 'src-off' : ''
+  ].filter(Boolean).join(' ');
+
+  return `
+    <div class="${classes}" data-id="${esc(id)}" id="card-${esc(id)}">
+      <div class="src-group-header" onclick="toggleCollapse('${esc(id)}', event)">
+        <span class="collapse-arrow">▶</span>
+        <span class="src-group-icon">${icon}</span>
+        <div class="src-group-title-wrap">
+          <div class="src-group-title">${esc(title)}</div>
+          <div class="src-group-meta">
+            <span class="src-badge ${badgeCls}">${badgeLbl}</span>
+            ${desc ? `<span class="src-group-desc">${esc(desc)}</span>` : ''}
           </div>
         </div>
-        <div class="src-card-actions">
-          <label class="tog" title="${s.is_enabled ? 'Enabled' : 'Disabled'}">
-            <input type="checkbox" ${s.is_enabled ? 'checked' : ''} onchange="toggleSource('${s.id}', this.checked)">
-            <span class="tog-track"></span>
-          </label>
-          <button class="edit-btn" onclick="startEdit('${s.id}')" title="Edit">✏️</button>
-          <button class="del-btn"  onclick="deleteSource('${s.id}','${esc(s.name)}')" title="Delete">🗑</button>
+        <div class="src-group-actions" onclick="event.stopPropagation()">
+          ${isNew ? '' : `
+            <label class="tog" title="${s.is_enabled ? 'Enabled' : 'Disabled'}">
+              <input type="checkbox" ${s.is_enabled ? 'checked' : ''} onchange="toggleEnabled('${esc(id)}', this.checked)">
+              <span class="tog-track"></span>
+            </label>
+          `}
+          <button class="icon-btn" onclick="toggleCollapse('${esc(id)}', event)" title="${open ? 'Collapse' : 'Edit'}">${open ? '▾' : '✏️'}</button>
+          <button class="icon-btn del" onclick="removeCard('${esc(id)}', event)" title="${isNew ? 'Discard' : 'Delete'}">🗑</button>
         </div>
-      </div>`;
-  }).join('');
+      </div>
+      <div class="src-group-body">
+        ${renderBody(s)}
+      </div>
+    </div>`;
 }
 
-// ── Type selector ─────────────────────────────────────────────────────────
-function setType(type) {
-  currentType = type;
-  document.getElementById('opt-sheet').classList.toggle('selected', type === 'sheet');
-  document.getElementById('opt-note').classList.toggle('selected', type === 'note');
-  renderTypeFields();
+function renderBody(s) {
+  const id   = s.id;
+  const type = s.type || 'sheet';
+  const cfg  = s.config || {};
+
+  const sheetFields = `
+    <div class="form-row">
+      <label>Google Sheet / Doc URL</label>
+      <input class="form-input" type="url"
+        id="f-url-${esc(id)}"
+        value="${esc(cfg.url || '')}"
+        placeholder="https://docs.google.com/spreadsheets/d/…"
+        oninput="markDirty('${esc(id)}')">
+    </div>
+    <div class="form-row">
+      <label>Sheet Tab Name <span>(optional — leave blank for first tab)</span></label>
+      <input class="form-input" type="text"
+        id="f-sheet-${esc(id)}"
+        value="${esc(cfg.sheet || '')}"
+        placeholder="Sheet1"
+        oninput="markDirty('${esc(id)}')">
+    </div>
+    <div class="test-row">
+      <button class="test-btn" onclick="testSheet('${esc(id)}')">🔍 Test Connection</button>
+      <span class="test-spinner" id="f-spin-${esc(id)}" style="font-size:12px;color:#999;display:none">Connecting…</span>
+    </div>
+    <div class="test-result" id="f-test-${esc(id)}"></div>`;
+
+  const noteFields = `
+    <div class="form-row">
+      <label>Content <span>(optional if URL is set)</span></label>
+      <textarea class="form-input"
+        id="f-content-${esc(id)}"
+        placeholder="Write anything the AI should know — store hours, rules, policies, notes…"
+        oninput="markDirty('${esc(id)}')">${esc(cfg.content || '')}</textarea>
+    </div>
+    <div class="form-row">
+      <label>URL to fetch <span>(optional — weather site, any webpage)</span></label>
+      <input class="form-input" type="url"
+        id="f-link-${esc(id)}"
+        value="${esc(cfg.link || '')}"
+        placeholder="https://weather.com/… or any public webpage"
+        oninput="markDirty('${esc(id)}')">
+    </div>
+    <div class="test-row">
+      <button class="test-btn" onclick="testLink('${esc(id)}')">🔍 Test Fetch</button>
+    </div>
+    <div class="test-result" id="f-test-${esc(id)}"></div>`;
+
+  return `
+    <div class="type-tabs">
+      <div class="type-tab ${type === 'sheet' ? 'active' : ''}"
+           onclick="setCardType('${esc(id)}','sheet')">📊 Live Sheet / Doc</div>
+      <div class="type-tab ${type === 'note' ? 'active' : ''}"
+           onclick="setCardType('${esc(id)}','note')">📝 Note</div>
+    </div>
+
+    <div class="form-row">
+      <label>Name</label>
+      <input class="form-input" type="text"
+        id="f-name-${esc(id)}"
+        value="${esc(s.name || '')}"
+        placeholder="e.g. Daily Sales, Weather, Store Rules…"
+        oninput="markDirty('${esc(id)}')">
+    </div>
+
+    <div id="f-typefields-${esc(id)}">
+      ${type === 'sheet' ? sheetFields : noteFields}
+    </div>
+
+    <div class="body-actions">
+      <button class="save-btn" id="f-save-${esc(id)}" onclick="saveCard('${esc(id)}')">
+        ${s._draft ? 'Add Source' : 'Save Changes'}
+      </button>
+      <button class="cancel-btn" onclick="cancelCard('${esc(id)}')">Cancel</button>
+    </div>`;
 }
 
-function renderTypeFields() {
-  const el = document.getElementById('type-fields');
-  if (currentType === 'sheet') {
-    el.innerHTML = `
-      <div class="form-row">
-        <label>Google Sheets URL</label>
-        <input class="form-input" type="url" id="src-url" placeholder="https://docs.google.com/spreadsheets/d/…">
-      </div>
-      <div class="form-row">
-        <label>Sheet Tab Name <span>(optional — leave blank for first tab)</span></label>
-        <input class="form-input" type="text" id="src-sheet" placeholder="Sheet1">
-      </div>
-      <div class="test-row">
-        <button class="test-btn" onclick="testSheet()">🔍 Test Connection</button>
-        <span id="test-spinner" style="font-size:12px;color:#999;display:none">Connecting…</span>
-      </div>
-      <div class="test-result" id="test-result"></div>`;
+// ── Card interactions ────────────────────────────────────────────────────
+function findSource(id) { return sources.find(s => s.id === id); }
+
+function toggleCollapse(id, event) {
+  if (event) event.stopPropagation();
+  const s = findSource(id);
+  if (!s) return;
+  s._open = !s._open;
+  renderAll();
+}
+
+function setCardType(id, type) {
+  const s = findSource(id);
+  if (!s || s.type === type) return;
+  // Read current form values, then switch type
+  readFormInto(s);
+  s.type = type;
+  s._dirty = true;
+  renderAll();
+}
+
+function markDirty(id) {
+  const s = findSource(id);
+  if (!s || s._draft) return;  // drafts are always considered "new", not "dirty"
+  if (s._dirty) return;
+  s._dirty = true;
+  // Update only the border without full re-render to avoid losing focus
+  const el = document.getElementById('card-' + id);
+  if (el) el.classList.add('is-dirty');
+}
+
+// Read current input values into the source object (without saving)
+function readFormInto(s) {
+  const id = s.id;
+  const nameEl = document.getElementById('f-name-' + id);
+  if (nameEl) s.name = nameEl.value;
+  const cfg = {};
+  if (s.type === 'sheet') {
+    cfg.url   = document.getElementById('f-url-' + id)?.value?.trim() || '';
+    cfg.sheet = document.getElementById('f-sheet-' + id)?.value?.trim() || '';
   } else {
-    el.innerHTML = `
-      <div class="form-row">
-        <label>Content <span>(optional if URL is set)</span></label>
-        <textarea class="form-input" id="src-content" placeholder="Write anything the AI should know — store hours, rules, policies, notes…&#10;&#10;Leave blank if you only want to fetch from the URL below."></textarea>
-      </div>
-      <div class="form-row">
-        <label>URL to fetch <span>(optional — weather site, any webpage)</span></label>
-        <input class="form-input" type="url" id="src-link" placeholder="https://weather.com/… or any public webpage">
-      </div>
-      <div id="link-test-row" style="margin-top:6px">
-        <button class="test-btn" onclick="testLink()">🔍 Test Fetch</button>
-      </div>
-      <div class="test-result" id="link-test-result"></div>`;
+    cfg.content = document.getElementById('f-content-' + id)?.value || '';
+    cfg.link    = document.getElementById('f-link-' + id)?.value?.trim() || '';
+  }
+  s.config = cfg;
+}
+
+function addNewCard() {
+  draftCounter++;
+  const id = 'new-' + draftCounter;
+  sources.unshift({
+    id,
+    _draft: true,
+    _open: true,
+    name: '',
+    type: 'sheet',
+    config: {},
+    is_enabled: true
+  });
+  renderAll();
+  // Focus name input
+  setTimeout(() => document.getElementById('f-name-' + id)?.focus(), 50);
+}
+
+function cancelCard(id) {
+  const s = findSource(id);
+  if (!s) return;
+  if (s._draft) {
+    // Discard draft
+    sources = sources.filter(x => x.id !== id);
+    renderAll();
+  } else {
+    // Reset & collapse — reload from Supabase to discard unsaved edits
+    loadSources();
   }
 }
 
-// ── Test sheet ────────────────────────────────────────────────────────────
-async function testSheet() {
-  const url = document.getElementById('src-url')?.value?.trim();
-  const sheet = document.getElementById('src-sheet')?.value?.trim();
-  const res = document.getElementById('test-result');
-  const spin = document.getElementById('test-spinner');
+async function removeCard(id, event) {
+  if (event) event.stopPropagation();
+  const s = findSource(id);
+  if (!s) return;
+  if (s._draft) {
+    sources = sources.filter(x => x.id !== id);
+    renderAll();
+    return;
+  }
+  if (!confirm(`Delete "${s.name}"?`)) return;
+  const { error } = await sb.from('context_sources').delete().eq('id', id);
+  if (error) { alert('Error deleting: ' + error.message); return; }
+  sources = sources.filter(x => x.id !== id);
+  renderAll();
+}
+
+async function toggleEnabled(id, enabled) {
+  const { error } = await sb.from('context_sources')
+    .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  const s = findSource(id);
+  if (s) s.is_enabled = enabled;
+  renderAll();
+}
+
+// ── Save card (insert for drafts, update for saved) ──────────────────────
+async function saveCard(id) {
+  const s = findSource(id);
+  if (!s) return;
+  readFormInto(s);
+  const name = (s.name || '').trim();
+  if (!name) { alert('Please give this source a name.'); return; }
+
+  if (s.type === 'sheet') {
+    if (!s.config.url) { alert('Please enter the Google Sheets / Doc URL.'); return; }
+  } else {
+    if (!s.config.content && !s.config.link) {
+      alert('Please enter some content or a URL to fetch.'); return;
+    }
+  }
+
+  const btn = document.getElementById('f-save-' + id);
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  if (s._draft) {
+    const { data, error } = await sb.from('context_sources')
+      .insert({ name, type: s.type, config: s.config, is_enabled: true })
+      .select()
+      .single();
+    if (error) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Add Source'; }
+      alert('Error saving: ' + error.message); return;
+    }
+    // Replace draft with saved record
+    sources = sources.map(x => x.id === id ? { ...data, _draft: false, _open: false, _dirty: false } : x);
+  } else {
+    const { error } = await sb.from('context_sources')
+      .update({ name, type: s.type, config: s.config, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+      alert('Error saving: ' + error.message); return;
+    }
+    s.name = name;
+    s._dirty = false;
+    s._open = false;
+  }
+  renderAll();
+}
+
+// ── Test sheet ───────────────────────────────────────────────────────────
+async function testSheet(id) {
+  const url   = document.getElementById('f-url-'   + id)?.value?.trim();
+  const sheet = document.getElementById('f-sheet-' + id)?.value?.trim();
+  const res   = document.getElementById('f-test-'  + id);
+  const spin  = document.getElementById('f-spin-'  + id);
   if (!res) return;
   if (!url) { res.textContent = '⚠️ Paste a Google Sheets URL first'; res.className = 'test-result show err'; return; }
   if (spin) spin.style.display = 'inline';
@@ -430,18 +677,18 @@ async function testSheet() {
 async function fetchSheetCsv(url, sheetName) {
   const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if (!m) throw new Error('Invalid URL — copy the full URL from your browser');
-  const id = m[1];
-  let csvUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`;
+  const sId = m[1];
+  let csvUrl = `https://docs.google.com/spreadsheets/d/${sId}/gviz/tq?tqx=out:csv`;
   if (sheetName) csvUrl += `&sheet=${encodeURIComponent(sheetName)}`;
   const r = await fetch(csvUrl);
   if (!r.ok) throw new Error(`Cannot access sheet (${r.status}). Set sharing to "Anyone with the link can view".`);
   return r.text();
 }
 
-// ── Test URL fetch ────────────────────────────────────────────────────────
-async function testLink() {
-  const url = document.getElementById('src-link')?.value?.trim();
-  const el  = document.getElementById('link-test-result');
+// ── Test URL fetch ───────────────────────────────────────────────────────
+async function testLink(id) {
+  const url = document.getElementById('f-link-' + id)?.value?.trim();
+  const el  = document.getElementById('f-test-' + id);
   if (!el) return;
   if (!url) { el.textContent = '⚠️ Enter a URL first'; el.className = 'test-result show err'; return; }
   el.textContent = '⏳ Fetching…'; el.className = 'test-result show';
@@ -462,137 +709,16 @@ async function testLink() {
   }
 }
 
-// ── Edit mode ─────────────────────────────────────────────────────────────
-async function startEdit(id) {
-  const { data: sources } = await sb.from('context_sources').select('*').eq('id', id).limit(1);
-  if (!sources?.length) return;
-  const s = sources[0];
-  currentEditId = id;
-
-  // Switch type
-  setType(s.type);
-
-  // Fill in name
-  document.getElementById('src-name').value = s.name;
-
-  // Fill in type-specific fields (after renderTypeFields ran inside setType)
-  if (s.type === 'sheet') {
-    document.getElementById('src-url').value   = s.config.url   || '';
-    document.getElementById('src-sheet').value = s.config.sheet || '';
-  } else {
-    document.getElementById('src-content').value = s.config.content || '';
-    document.getElementById('src-link').value     = s.config.link    || '';
-  }
-
-  // Update panel UI
-  document.getElementById('panel-title').textContent = '✏️ Edit Source';
-  document.getElementById('submit-btn').textContent  = 'Save Changes';
-  document.getElementById('cancel-btn').style.display = 'block';
-
-  // Scroll panel into view on mobile
-  document.querySelector('.add-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function cancelEdit() {
-  currentEditId = null;
-  document.getElementById('panel-title').textContent  = '➕ Add New Source';
-  document.getElementById('submit-btn').textContent   = 'Add Source';
-  document.getElementById('cancel-btn').style.display = 'none';
-  document.getElementById('src-name').value = '';
-  renderTypeFields();
-}
-
-function submitSource() {
-  if (currentEditId) saveEdit();
-  else addSource();
-}
-
-// ── CRUD (Supabase) ───────────────────────────────────────────────────────
-async function addSource() {
-  const name = document.getElementById('src-name')?.value?.trim();
-  if (!name) { alert('Please give this source a name.'); return; }
-
-  let config = {};
-  if (currentType === 'sheet') {
-    const url = document.getElementById('src-url')?.value?.trim();
-    if (!url) { alert('Please enter the Google Sheets URL.'); return; }
-    config = { url, sheet: document.getElementById('src-sheet')?.value?.trim() || '' };
-  } else {
-    const content = document.getElementById('src-content')?.value?.trim();
-    const link    = document.getElementById('src-link')?.value?.trim();
-    if (!content && !link) { alert('Please enter some content or a URL to fetch.'); return; }
-    config = { content: content || '', link: link || '' };
-  }
-
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true; btn.textContent = 'Saving…';
-
-  const { error } = await sb.from('context_sources').insert({
-    name, type: currentType, config, is_enabled: true
-  });
-
-  btn.disabled = false; btn.textContent = 'Add Source';
-  if (error) { alert('Error saving: ' + error.message); return; }
-
-  document.getElementById('src-name').value = '';
-  renderTypeFields();
-  await renderSources();
-}
-
-async function saveEdit() {
-  const id   = currentEditId;
-  const name = document.getElementById('src-name')?.value?.trim();
-  if (!name) { alert('Please give this source a name.'); return; }
-
-  let config = {};
-  if (currentType === 'sheet') {
-    const url = document.getElementById('src-url')?.value?.trim();
-    if (!url) { alert('Please enter the Google Sheets URL.'); return; }
-    config = { url, sheet: document.getElementById('src-sheet')?.value?.trim() || '' };
-  } else {
-    const content = document.getElementById('src-content')?.value?.trim();
-    const link    = document.getElementById('src-link')?.value?.trim();
-    if (!content && !link) { alert('Please enter some content or a URL to fetch.'); return; }
-    config = { content: content || '', link: link || '' };
-  }
-
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true; btn.textContent = 'Saving…';
-
-  const { error } = await sb.from('context_sources')
-    .update({ name, type: currentType, config, updated_at: new Date().toISOString() })
-    .eq('id', id);
-
-  btn.disabled = false;
-  if (error) { btn.textContent = 'Save Changes'; alert('Error saving: ' + error.message); return; }
-
-  cancelEdit();
-  await renderSources();
-}
-
-async function toggleSource(id, enabled) {
-  await sb.from('context_sources')
-    .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
-    .eq('id', id);
-  await renderSources();
-}
-
-async function deleteSource(id, name) {
-  if (!confirm(`Delete "${name}"?`)) return;
-  await sb.from('context_sources').delete().eq('id', id);
-  await renderSources();
-}
-
-// ── Utils ─────────────────────────────────────────────────────────────────
+// ── Utils ────────────────────────────────────────────────────────────────
 function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function shortenUrl(url) {
   try {
     const u = new URL(url);
     const path = u.pathname.length > 30 ? u.pathname.slice(0, 30) + '…' : u.pathname;
     return u.hostname + path;
-  } catch { return url.slice(0, 50); }
+  } catch { return String(url).slice(0, 50); }
 }
 
 // Sync dark mode from parent frame
