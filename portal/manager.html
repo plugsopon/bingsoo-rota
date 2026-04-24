@@ -128,6 +128,16 @@
   .slot-Allfree { background: #d1fae5; color: #065f46; }
   .slot-Off { background: #f3f4f6; color: #6b7280; }
   .slot-none { color: #d1d5db; font-style: italic; font-size: 11px; }
+  .avail-note {
+    margin-top: 4px;
+    font-size: 10px;
+    color: #6b7280;
+    font-style: italic;
+    line-height: 1.3;
+    max-width: 140px;
+    word-wrap: break-word;
+    white-space: normal;
+  }
   .day-header-weekend { color: #f59e0b; }
   .nav-links { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
   .nav-link {
@@ -172,6 +182,7 @@
 [data-dark] .name-cell { color: #d0d0e8; }
 [data-dark] .coverage-row { background: #141426; color: #8899ff; }
 [data-dark] .slot-none { color: #3a3a5e; }
+[data-dark] .avail-note { color: #8888aa; }
 [data-dark] .slot-Morning { background: #1e3a5f; color: #93c5fd; }
 [data-dark] .slot-Afternoon { background: #3d2d00; color: #fcd34d; }
 [data-dark] .slot-Allfree { background: #064e3b; color: #6ee7b7; }
@@ -276,6 +287,12 @@ function populateWeeks() {
   });
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
 async function loadData() {
   const weekStart = document.getElementById('week-select').value;
   const d = new Date(weekStart + 'T00:00:00');
@@ -285,7 +302,7 @@ async function loadData() {
 
   const [staffRes, availRes] = await Promise.all([
     sb.from('staff').select('id, name, role, contract_hours').order('name'),
-    sb.from('availability').select('staff_id, day, slot').gte('day', weekStart).lte('day', weekEnd)
+    sb.from('availability').select('staff_id, day, slot, note').gte('day', weekStart).lte('day', weekEnd)
   ]);
 
   let allStaff = staffRes.data || [];
@@ -293,11 +310,11 @@ async function loadData() {
   allStaff.sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) || a.name.localeCompare(b.name));
   const allAvail = availRes.data || [];
 
-  // Build lookup: staff_id -> { dateStr -> slot }
+  // Build lookup: staff_id -> { dateStr -> {slot, note} }
   const availMap = {};
   allAvail.forEach(a => {
     if (!availMap[a.staff_id]) availMap[a.staff_id] = {};
-    availMap[a.staff_id][a.day] = a.slot;
+    availMap[a.staff_id][a.day] = { slot: a.slot, note: a.note };
   });
 
   // Date strings for each day
@@ -310,7 +327,7 @@ async function loadData() {
 
   // Count available per day
   const countAvail = dates.map(date =>
-    allStaff.filter(s => availMap[s.id]?.[date] && availMap[s.id][date] !== 'Off').length
+    allStaff.filter(s => availMap[s.id]?.[date] && availMap[s.id][date].slot !== 'Off').length
   );
   const weekdayAvg = countAvail.slice(0,5).reduce((a,b) => a+b, 0) / 5;
   const weekendAvg = countAvail.slice(5,7).reduce((a,b) => a+b, 0) / 2;
@@ -329,12 +346,13 @@ async function loadData() {
   allStaff.forEach(staff => {
     html += `<tr><td class="name-cell">${staff.name}<span class="role-badge role-${staff.role.replace(/ /g,'-')}">${staff.role}</span></td>`;
     dates.forEach(date => {
-      const slot = availMap[staff.id]?.[date];
-      if (!slot) {
+      const a = availMap[staff.id]?.[date];
+      if (!a) {
         html += `<td><span class="slot-none">–</span></td>`;
       } else {
-        const cls = 'slot-' + slot.replace(' ','');
-        html += `<td><span class="slot-pill ${cls}">${slot}</span></td>`;
+        const cls = 'slot-' + a.slot.replace(' ','');
+        const noteHtml = a.note ? `<div class="avail-note" title="${escapeHtml(a.note)}">📝 ${escapeHtml(a.note)}</div>` : '';
+        html += `<td><span class="slot-pill ${cls}">${a.slot}</span>${noteHtml}</td>`;
       }
     });
     html += '</tr>';
