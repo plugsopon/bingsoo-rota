@@ -171,21 +171,39 @@
   }
 
 /* ── Dark mode ── */
-[data-dark] body          { background: #0f0f1a; }
-[data-dark] .info-bar     { background: #1a1a2e; border-color: #333355; color: #8888aa; }
-[data-dark] .toolbar      { background: #141426; border-color: #2a2a40; }
+[data-dark] body          { background: #0f0f1a; color: #d0d0e8; }
+[data-dark] .hint-box     { background: #141426; border-color: #2a2a40; color: #8888cc; }
+[data-dark] .toolbar      { background: #141426; }
 [data-dark] .toolbar label { color: #8888aa; }
 [data-dark] .toolbar select { background: #1a1a2e; border-color: #2a2a40; color: #d0d0e8; }
-[data-dark] .grid-card    { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+[data-dark] .grid-card    { background: #1a1a2e; box-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+[data-dark] .grid-card h2 { color: #d0d0e8; }
+[data-dark] .legend       { color: #8888aa; }
 [data-dark] th            { background: #141426; color: #8888aa; border-color: #2a2a40; }
-[data-dark] td            { border-color: #2a2a40; }
+[data-dark] td            { background: #0f0f1a; border-color: #2a2a40; color: #d0d0e8; }
 [data-dark] .name-cell    { color: #d0d0e8; background: #141426; }
+[data-dark] .off-cell     { background: #141426 !important; }
+[data-dark] .no-avail-cell { background: #141426 !important; }
+[data-dark] tr:hover td   { background: #1a1a2e !important; }
 [data-dark] .time-input   { background: #0f0f1a; border-color: #2a2a40; color: #d0d0e8; }
-[data-dark] .break-select { background: #0f0f1a; border-color: #2a2a40; color: #d0d0e8; }
-[data-dark] .save-btn     { background: #667eea; }
+[data-dark] .time-input:focus { background: #141426; border-color: #667eea; }
+[data-dark] .time-input.has-override { background: #2a1800; border-color: #f59e0b; }
+[data-dark] .break-input  { background: #0f0f1a; border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .break-input:focus { background: #141426; border-color: #667eea; }
+[data-dark] .break-input.has-override { background: #2a1800; border-color: #f59e0b; }
+[data-dark] .note-input   { background: #0f0f1a; border-color: #2a2a40; color: #aaaacc; }
+[data-dark] .note-input:focus { background: #141426; border-color: #667eea; }
+[data-dark] .note-input.has-override { background: #2a1800; border-color: #f59e0b; }
+[data-dark] .break-row    { color: #8888aa; }
+[data-dark] .time-sep     { color: #6666aa; }
+[data-dark] .slot-Morning  { background: #1d2e50; color: #93c5fd; }
+[data-dark] .slot-Afternoon { background: #2d2010; color: #fcd34d; }
+[data-dark] .slot-Allfree  { background: #102820; color: #6ee7b7; }
+[data-dark] .slot-Off      { background: #1a1a2e; color: #5555aa; }
+[data-dark] .slot-none     { color: #333355; }
 [data-dark] .nav-link     { background: #1a1a2e; color: #9999ee; }
 [data-dark] .nav-link:hover, [data-dark] .nav-link.active { background: #667eea; color: white; }
-[data-dark] .override-row { background: rgba(255,220,80,0.08) !important; }
+[data-dark] .override-row { background: rgba(255,220,80,0.06) !important; }
 </style>
 </head>
 <body>
