@@ -3,231 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingsoo ROTA – 27 Apr – 03 May 2026</title>
-<style>
-  /* ===== RESET & BASE ===== */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #F0F2F5;
-    color: #2C3E50;
-    padding: 24px;
-  }
-
-  /* ===== HEADER ===== */
-  .header {
-    background: linear-gradient(135deg, #2C3E50 0%, #4A6FA5 100%);
-    color: white;
-    border-radius: 16px;
-    padding: 24px 32px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .header h1 { font-size: 1.8rem; font-weight: 700; }
-  .header .week-badge {
-    background: rgba(255,255,255,0.2);
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 0.95rem;
-    font-weight: 500;
-  }
-
-  /* ===== LEGEND ===== */
-  .legend {
-    display: flex; gap: 16px; flex-wrap: wrap;
-    margin-bottom: 20px;
-  }
-  .legend-item {
-    display: flex; align-items: center; gap: 6px;
-    background: white; border-radius: 8px;
-    padding: 6px 12px; font-size: 0.82rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
-  .legend-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-  }
-
-  /* ===== TABLE WRAPPER ===== */
-  .table-wrap {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    overflow: auto;
-  }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    min-width: 900px;
-  }
-
-  /* ===== DATE HEADER ===== */
-  .date-header {
-    background: #2C3E50;
-    color: white;
-    text-align: center;
-    padding: 12px 8px;
-    min-width: 130px;
-  }
-  .day-name { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
-  .day-date { font-size: 1rem; font-weight: 700; margin-top: 2px; }
-
-  th.label-th {
-    background: #2C3E50;
-    color: white;
-    text-align: left;
-    padding: 12px 16px;
-    min-width: 150px;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  th.hours-th {
-    background: #2C3E50;
-    color: white;
-    text-align: center;
-    padding: 12px 8px;
-    min-width: 110px;
-    font-size: 0.85rem;
-  }
-
-  /* ===== DEMAND ROW ===== */
-  .demand-row td { border-bottom: 2px solid #E8ECF0; }
-  td.label-demand {
-    background: #F8F9FA;
-    padding: 10px 16px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #7F8C8D;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .demand-cell {
-    text-align: center;
-    padding: 10px 6px;
-    border-left: 1px solid #E8ECF0;
-  }
-  .demand-label { font-size: 0.8rem; font-weight: 700; }
-  .demand-est   { font-size: 0.9rem; font-weight: 600; margin: 2px 0; }
-  .demand-weather { font-size: 0.75rem; opacity: 0.8; }
-
-  /* ===== STAFF ROWS ===== */
-  tbody tr:not(.totals-row):not(.demand-row):hover td { background: #F8F9FA; }
-  tr:nth-child(even) .staff-name-cell,
-  tr:nth-child(even) .hours-cell { background: #FAFBFC; }
-
-  .staff-name-cell {
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-bottom: 1px solid #E8ECF0;
-  }
-  .staff-dot {
-    width: 12px; height: 12px;
-    border-radius: 50%; flex-shrink: 0;
-  }
-  .staff-name { font-weight: 600; font-size: 0.95rem; }
-  .role-badge {
-    display: inline-block;
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 20px;
-    margin-top: 3px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* ===== SHIFT CELLS ===== */
-  td.shift {
-    text-align: center;
-    padding: 10px 6px;
-    border-left: 1px solid #E8ECF0;
-    border-bottom: 1px solid #E8ECF0;
-    vertical-align: top;
-    background: #F7FBFF;
-  }
-  .shift-time { font-size: 0.88rem; font-weight: 700; color: #2C3E50; }
-  .shift-hrs  { font-size: 0.78rem; color: #7F8C8D; margin: 2px 0; }
-  .break-badge {
-    display: inline-block;
-    background: #FEF9E7;
-    color: #B7950B;
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-top: 4px;
-    border: 1px solid #F9E79F;
-  }
-
-  td.off {
-    text-align: center;
-    padding: 10px 6px;
-    border-left: 1px solid #E8ECF0;
-    border-bottom: 1px solid #E8ECF0;
-    color: #BDC3C7;
-    font-size: 0.8rem;
-    font-weight: 600;
-    background: #FAFAFA;
-    letter-spacing: 1px;
-  }
-
-  /* ===== HOURS CELL ===== */
-  .hours-cell {
-    padding: 10px 12px;
-    border-left: 2px solid #E8ECF0;
-    border-bottom: 1px solid #E8ECF0;
-    text-align: center;
-    vertical-align: middle;
-  }
-  .hours-number { font-weight: 700; font-size: 0.9rem; }
-  .contract { font-weight: 400; color: #95A5A6; font-size: 0.8rem; }
-  .hours-bar-bg {
-    background: #ECF0F1;
-    border-radius: 4px;
-    height: 5px;
-    margin-top: 6px;
-    overflow: hidden;
-  }
-  .hours-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.3s;
-  }
-
-  /* ===== TOTALS ROW ===== */
-  .totals-row td {
-    background: #2C3E50 !important;
-    color: white;
-    font-weight: 700;
-    padding: 12px 8px;
-  }
-  .total-label {
-    text-align: left;
-    padding-left: 16px !important;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .total-cell { text-align: center; font-size: 0.95rem; border-left: 1px solid rgba(255,255,255,0.1); }
-  .total-grand {
-    text-align: center;
-    font-size: 1rem;
-    border-left: 2px solid rgba(255,255,255,0.2);
-    color: #F9E79F;
-  }
-
-  /* ===== FOOTER ===== */
-  .footer {
-    text-align: center;
-    margin-top: 16px;
-    font-size: 0.78rem;
-    color: #95A5A6;
-  }
-</style>
+<title>Bingsoo ROTA – 27 Apr – 3 May 2026</title>
+<style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #F0F2F5; color: #2C3E50; padding: 24px; }
+.header { background: linear-gradient(135deg, #2C3E50 0%, #4A6FA5 100%); color: white; border-radius: 16px; padding: 24px 32px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 1.8rem; font-weight: 700; }
+.header .week-badge { background: rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 16px; font-size: 0.95rem; font-weight: 500; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.legend-item { display: flex; align-items: center; gap: 6px; background: white; border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.table-wrap { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 900px; }
+.date-header { background: #2C3E50; color: white; text-align: center; padding: 12px 8px; min-width: 130px; }
+.day-name { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
+.day-date { font-size: 1rem; font-weight: 700; margin-top: 2px; }
+th.label-th { background: #2C3E50; color: white; text-align: left; padding: 12px 16px; min-width: 150px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+th.hours-th { background: #2C3E50; color: white; text-align: center; padding: 12px 8px; min-width: 110px; font-size: 0.85rem; }
+.demand-row td { border-bottom: 2px solid #E8ECF0; }
+td.label-demand { background: #F8F9FA; padding: 10px 16px; font-size: 0.8rem; font-weight: 600; color: #7F8C8D; text-transform: uppercase; letter-spacing: 0.5px; }
+.demand-cell { text-align: center; padding: 10px 6px; border-left: 1px solid #E8ECF0; }
+.demand-label { font-size: 0.8rem; font-weight: 700; }
+.demand-est { font-size: 0.9rem; font-weight: 600; margin: 2px 0; }
+.demand-weather { font-size: 0.75rem; opacity: 0.8; }
+tbody tr:not(.totals-row):not(.demand-row):hover td { background: #F8F9FA; }
+tr:nth-child(even) .staff-name-cell, tr:nth-child(even) .hours-cell { background: #FAFBFC; }
+.staff-name-cell { padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #E8ECF0; }
+.staff-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.staff-name { font-weight: 600; font-size: 0.95rem; }
+.role-badge { display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 20px; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+td.shift { text-align: center; padding: 10px 6px; border-left: 1px solid #E8ECF0; border-bottom: 1px solid #E8ECF0; vertical-align: top; background: #F7FBFF; }
+.shift-time { font-size: 0.88rem; font-weight: 700; color: #2C3E50; }
+.shift-hrs { font-size: 0.78rem; color: #7F8C8D; margin: 2px 0; }
+.break-badge { display: inline-block; background: #FEF9E7; color: #B7950B; font-size: 0.68rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-top: 4px; border: 1px solid #F9E79F; }
+td.off { text-align: center; padding: 10px 6px; border-left: 1px solid #E8ECF0; border-bottom: 1px solid #E8ECF0; color: #BDC3C7; font-size: 0.8rem; font-weight: 600; background: #FAFAFA; letter-spacing: 1px; }
+.hours-cell { padding: 10px 12px; border-left: 2px solid #E8ECF0; border-bottom: 1px solid #E8ECF0; text-align: center; vertical-align: middle; }
+.hours-number { font-weight: 700; font-size: 0.9rem; }
+.contract { font-weight: 400; color: #95A5A6; font-size: 0.8rem; }
+.hours-bar-bg { background: #ECF0F1; border-radius: 4px; height: 5px; margin-top: 6px; overflow: hidden; }
+.hours-bar-fill { height: 100%; border-radius: 4px; }
+.totals-row td { background: #2C3E50 !important; color: white; font-weight: 700; padding: 12px 8px; }
+.total-label { text-align: left; padding-left: 16px !important; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.total-cell { text-align: center; font-size: 0.95rem; border-left: 1px solid rgba(255,255,255,0.1); }
+.total-grand { text-align: center; font-size: 1rem; border-left: 2px solid rgba(255,255,255,0.2); color: #F9E79F; }
+.footer { text-align: center; margin-top: 16px; font-size: 0.78rem; color: #95A5A6; }</style>
 </head>
 <body>
 
@@ -236,7 +54,7 @@
     <div style="font-size:0.8rem;opacity:0.7;margin-bottom:4px">WEEKLY ROTA</div>
     <h1>🧁 Bingsoo Cafe</h1>
   </div>
-  <div class="week-badge">📅 27 Apr – 03 May 2026</div>
+  <div class="week-badge">📅 27 Apr – 3 May 2026</div>
 </div>
 
 <div class="legend">
@@ -252,230 +70,396 @@
   <thead>
     <tr>
       <th class="label-th">Staff</th>
-      <th class="date-header">  <div class="day-name">Monday</div>  <div class="day-date">27 Apr</div></th><th class="date-header">  <div class="day-name">Tuesday</div>  <div class="day-date">28 Apr</div></th><th class="date-header">  <div class="day-name">Wednesday</div>  <div class="day-date">29 Apr</div></th><th class="date-header">  <div class="day-name">Thursday</div>  <div class="day-date">30 Apr</div></th><th class="date-header">  <div class="day-name">Friday</div>  <div class="day-date">01 May</div></th><th class="date-header">  <div class="day-name">Saturday</div>  <div class="day-date">02 May</div></th><th class="date-header">  <div class="day-name">Sunday</div>  <div class="day-date">03 May</div></th>
+      <th class="date-header">
+      <div class="day-name">MON</div>
+      <div class="day-date">27 Apr</div>
+    </th>
+      <th class="date-header">
+      <div class="day-name">TUE</div>
+      <div class="day-date">28 Apr</div>
+    </th>
+      <th class="date-header">
+      <div class="day-name">WED</div>
+      <div class="day-date">29 Apr</div>
+    </th>
+      <th class="date-header">
+      <div class="day-name">THU</div>
+      <div class="day-date">30 Apr</div>
+    </th>
+      <th class="date-header">
+      <div class="day-name">FRI</div>
+      <div class="day-date">1 May</div>
+    </th>
+      <th class="date-header">
+      <div class="day-name">SAT</div>
+      <div class="day-date">2 May</div>
+    </th>
+      <th class="date-header">
+      <div class="day-name">SUN</div>
+      <div class="day-date">3 May</div>
+    </th>
       <th class="hours-th">Weekly<br>Hours</th>
     </tr>
   </thead>
   <tbody>
     <tr class="demand-row">
-      <td class="label-demand">Demand / Weather</td>
-      <td class="demand-cell" style="background:#EAFAF1;color:#1E8449">  <div class="demand-label">🟢 LOW</div>  <div class="demand-est">~£1,095</div>  <div class="demand-weather">☀️ 19.9°C · 0mm</div></td><td class="demand-cell" style="background:#EAFAF1;color:#1E8449">  <div class="demand-label">🟢 LOW</div>  <div class="demand-est">~£1,061</div>  <div class="demand-weather">☀️ 15.3°C · 0.6mm</div></td><td class="demand-cell" style="background:#EAFAF1;color:#1E8449">  <div class="demand-label">🟢 LOW</div>  <div class="demand-est">~£1,181</div>  <div class="demand-weather">☀️ 16.9°C · 0mm</div></td><td class="demand-cell" style="background:#EAFAF1;color:#1E8449">  <div class="demand-label">🟢 LOW</div>  <div class="demand-est">~£1,028</div>  <div class="demand-weather">☀️ 19.5°C · 0mm</div></td><td class="demand-cell" style="background:#FEFDE7;color:#D4AC0D">  <div class="demand-label">🟡 MEDIUM</div>  <div class="demand-est">~£1,473</div>  <div class="demand-weather">☀️ 19.9°C · 0mm</div></td><td class="demand-cell" style="background:#FDEDEC;color:#E74C3C">  <div class="demand-label">🔴 HIGH</div>  <div class="demand-est">~£3,272</div>  <div class="demand-weather">☀️ 21.5°C · 0mm</div></td><td class="demand-cell" style="background:#FDEDEC;color:#E74C3C">  <div class="demand-label">🔴 HIGH</div>  <div class="demand-est">~£2,320</div>  <div class="demand-weather">☀️ 20.5°C · 0.4mm</div></td>
+      <td class="label-demand">Demand / Revenue</td>
+      <td class="demand-cell" style="background:#FEFDE7">
+        <div class="demand-label" style="color:#D4AC0D">🟡 MEDIUM</div>
+        <div class="demand-est">£1,184</div>
+        <div class="demand-weather">🌧️ Light rain 20°C · 3mm</div>
+      </td>
+      <td class="demand-cell" style="background:#EAFAF1">
+        <div class="demand-label" style="color:#1E8449">🟢 LOW</div>
+        <div class="demand-est">£1,048</div>
+        <div class="demand-weather">☀️ Sunny intervals 16°C · 0mm</div>
+      </td>
+      <td class="demand-cell" style="background:#FEFDE7">
+        <div class="demand-label" style="color:#D4AC0D">🟡 MEDIUM</div>
+        <div class="demand-est">£1,171</div>
+        <div class="demand-weather">☀️ Sunny 18°C · 0mm</div>
+      </td>
+      <td class="demand-cell" style="background:#FEFDE7">
+        <div class="demand-label" style="color:#D4AC0D">🟡 MEDIUM</div>
+        <div class="demand-est">£1,086</div>
+        <div class="demand-weather">☀️ Sunny intervals 18°C · 0mm</div>
+      </td>
+      <td class="demand-cell" style="background:#EAFAF1">
+        <div class="demand-label" style="color:#1E8449">🟢 MEDIUM-HIGH</div>
+        <div class="demand-est">£1,581</div>
+        <div class="demand-weather">☀️ Sunny 21°C · 0mm</div>
+      </td>
+      <td class="demand-cell" style="background:#FDEDEC">
+        <div class="demand-label" style="color:#E74C3C">🔴 HIGH</div>
+        <div class="demand-est">£3,061</div>
+        <div class="demand-weather">☀️ Sunny intervals 23°C · 0mm</div>
+      </td>
+      <td class="demand-cell" style="background:#FDEDEC">
+        <div class="demand-label" style="color:#E74C3C">🔴 HIGH</div>
+        <div class="demand-est">£2,177</div>
+        <div class="demand-weather">☀️ Sunny intervals 21°C · 0mm</div>
+      </td>
       <td class="hours-cell" style="background:#F8F9FA"></td>
     </tr>
-    
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#4A90D9"></span>
-            <div>
-              <div class="staff-name">Som</div>
-              <span class="role-badge"
-                    style="background:#F4ECF7;color:#6C3483">Manager</span>
-            </div>
-          </td>
-          <td class="shift" data-name="Som" data-date="2026-04-27" style="border-top:3px solid #4A90D9">  <div class="shift-time">07:00 – 14:00</div>  <div class="shift-hrs">6.5h</div>  <span class="break-badge">Break 10:30–11:00 (0.5h)</span></td><td class="shift" data-name="Som" data-date="2026-04-28" style="border-top:3px solid #4A90D9">  <div class="shift-time">14:00 – 21:30</div>  <div class="shift-hrs">7.0h</div>  <span class="break-badge">Break 17:45–18:15 (0.5h)</span></td><td class="shift" data-name="Som" data-date="2026-04-29" style="border-top:3px solid #4A90D9">  <div class="shift-time">07:00 – 14:00</div>  <div class="shift-hrs">6.5h</div>  <span class="break-badge">Break 10:30–11:00 (0.5h)</span></td><td class="shift" data-name="Som" data-date="2026-04-30" style="border-top:3px solid #4A90D9">  <div class="shift-time">14:00 – 21:30</div>  <div class="shift-hrs">7.0h</div>  <span class="break-badge">Break 17:45–18:15 (0.5h)</span></td><td class="off" data-name="Som" data-date="2026-05-01">OFF</td><td class="off" data-name="Som" data-date="2026-05-02">OFF</td><td class="off" data-name="Som" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">27.0h <span class="contract">/ 40h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:67%;background:#4A90D9"></div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#E8845A"></span>
-            <div>
-              <div class="staff-name">Dongjune</div>
-              <span class="role-badge"
-                    style="background:#EBF5FB;color:#1A5276">Supervisor</span>
-            </div>
-          </td>
-          <td class="off" data-name="Dongjune" data-date="2026-04-27">OFF</td><td class="off" data-name="Dongjune" data-date="2026-04-28">OFF</td><td class="off" data-name="Dongjune" data-date="2026-04-29">OFF</td><td class="off" data-name="Dongjune" data-date="2026-04-30">OFF</td><td class="off" data-name="Dongjune" data-date="2026-05-01">OFF</td><td class="off" data-name="Dongjune" data-date="2026-05-02">OFF</td><td class="off" data-name="Dongjune" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">0.0h <span class="contract">/ 40h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:0%;background:#E8845A"></div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#6BBF6B"></span>
-            <div>
-              <div class="staff-name">Daeun</div>
-              <span class="role-badge"
-                    style="background:#EAFAF1;color:#1E8449">Assistant</span>
-            </div>
-          </td>
-          <td class="off" data-name="Daeun" data-date="2026-04-27">OFF</td><td class="off" data-name="Daeun" data-date="2026-04-28">OFF</td><td class="off" data-name="Daeun" data-date="2026-04-29">OFF</td><td class="off" data-name="Daeun" data-date="2026-04-30">OFF</td><td class="off" data-name="Daeun" data-date="2026-05-01">OFF</td><td class="off" data-name="Daeun" data-date="2026-05-02">OFF</td><td class="off" data-name="Daeun" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">0.0h <span class="contract">/ 20h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:0%;background:#6BBF6B"></div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#B57BCC"></span>
-            <div>
-              <div class="staff-name">Haeun</div>
-              <span class="role-badge"
-                    style="background:#EAFAF1;color:#1E8449">Assistant</span>
-            </div>
-          </td>
-          <td class="off" data-name="Haeun" data-date="2026-04-27">OFF</td><td class="off" data-name="Haeun" data-date="2026-04-28">OFF</td><td class="off" data-name="Haeun" data-date="2026-04-29">OFF</td><td class="off" data-name="Haeun" data-date="2026-04-30">OFF</td><td class="off" data-name="Haeun" data-date="2026-05-01">OFF</td><td class="off" data-name="Haeun" data-date="2026-05-02">OFF</td><td class="off" data-name="Haeun" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">0.0h <span class="contract">/ 20h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:0%;background:#B57BCC"></div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#E8C45A"></span>
-            <div>
-              <div class="staff-name">Jin</div>
-              <span class="role-badge"
-                    style="background:#EAFAF1;color:#1E8449">Assistant</span>
-            </div>
-          </td>
-          <td class="off" data-name="Jin" data-date="2026-04-27">OFF</td><td class="off" data-name="Jin" data-date="2026-04-28">OFF</td><td class="off" data-name="Jin" data-date="2026-04-29">OFF</td><td class="off" data-name="Jin" data-date="2026-04-30">OFF</td><td class="off" data-name="Jin" data-date="2026-05-01">OFF</td><td class="off" data-name="Jin" data-date="2026-05-02">OFF</td><td class="off" data-name="Jin" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">0.0h <span class="contract">/ 40h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:0%;background:#E8C45A"></div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#5AB8CC"></span>
-            <div>
-              <div class="staff-name">KaYan</div>
-              <span class="role-badge"
-                    style="background:#EAFAF1;color:#1E8449">Assistant</span>
-            </div>
-          </td>
-          <td class="off" data-name="KaYan" data-date="2026-04-27">OFF</td><td class="off" data-name="KaYan" data-date="2026-04-28">OFF</td><td class="off" data-name="KaYan" data-date="2026-04-29">OFF</td><td class="off" data-name="KaYan" data-date="2026-04-30">OFF</td><td class="off" data-name="KaYan" data-date="2026-05-01">OFF</td><td class="off" data-name="KaYan" data-date="2026-05-02">OFF</td><td class="off" data-name="KaYan" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">0.0h <span class="contract">/ 20h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:0%;background:#5AB8CC"></div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#E87A8A"></span>
-            <div>
-              <div class="staff-name">Linna</div>
-              <span class="role-badge"
-                    style="background:#EAFAF1;color:#1E8449">Assistant</span>
-            </div>
-          </td>
-          <td class="off" data-name="Linna" data-date="2026-04-27">OFF</td><td class="off" data-name="Linna" data-date="2026-04-28">OFF</td><td class="off" data-name="Linna" data-date="2026-04-29">OFF</td><td class="off" data-name="Linna" data-date="2026-04-30">OFF</td><td class="off" data-name="Linna" data-date="2026-05-01">OFF</td><td class="off" data-name="Linna" data-date="2026-05-02">OFF</td><td class="off" data-name="Linna" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">0.0h <span class="contract">/ 40h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:0%;background:#E87A8A"></div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#7AB87A"></span>
-            <div>
-              <div class="staff-name">Riwon</div>
-              <span class="role-badge"
-                    style="background:#EAFAF1;color:#1E8449">Assistant</span>
-            </div>
-          </td>
-          <td class="off" data-name="Riwon" data-date="2026-04-27">OFF</td><td class="off" data-name="Riwon" data-date="2026-04-28">OFF</td><td class="off" data-name="Riwon" data-date="2026-04-29">OFF</td><td class="off" data-name="Riwon" data-date="2026-04-30">OFF</td><td class="off" data-name="Riwon" data-date="2026-05-01">OFF</td><td class="off" data-name="Riwon" data-date="2026-05-02">OFF</td><td class="off" data-name="Riwon" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">0.0h <span class="contract">/ 20h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:0%;background:#7AB87A"></div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="staff-name-cell">
-            <span class="staff-dot" style="background:#CC8C5A"></span>
-            <div>
-              <div class="staff-name">Yujin</div>
-              <span class="role-badge"
-                    style="background:#EAFAF1;color:#1E8449">Assistant</span>
-            </div>
-          </td>
-          <td class="off" data-name="Yujin" data-date="2026-04-27">OFF</td><td class="off" data-name="Yujin" data-date="2026-04-28">OFF</td><td class="off" data-name="Yujin" data-date="2026-04-29">OFF</td><td class="off" data-name="Yujin" data-date="2026-04-30">OFF</td><td class="off" data-name="Yujin" data-date="2026-05-01">OFF</td><td class="off" data-name="Yujin" data-date="2026-05-02">OFF</td><td class="off" data-name="Yujin" data-date="2026-05-03">OFF</td>
-          <td class="hours-cell">
-            <div class="hours-number">0.0h <span class="contract">/ 20h</span></div>
-            <div class="hours-bar-bg">
-              <div class="hours-bar-fill"
-                   style="width:0%;background:#CC8C5A"></div>
-            </div>
-          </td>
-        </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#4A90D9"></div>
+          <div>
+            <div class="staff-name">Som</div>
+            <span class="role-badge" style="background:#F4ECF7;color:#6C3483">Manager</span>
+          </div>
+        </div>
+      </td>
+      <td class="shift" data-name="Som" data-date="2026-04-27" style="border-top:3px solid #4A90D9">
+        <div class="shift-time">07:30 – 13:00</div>
+        <div class="shift-hrs">5h</div>
+        <span class="break-badge">Break 10:15–10:45 (0.5h)</span>
+      </td>
+      <td class="off" data-name="Som" data-date="2026-04-28">OFF</td>
+      <td class="off" data-name="Som" data-date="2026-04-29">OFF</td>
+      <td class="off" data-name="Som" data-date="2026-04-30">OFF</td>
+      <td class="off" data-name="Som" data-date="2026-05-01">OFF</td>
+      <td class="off" data-name="Som" data-date="2026-05-02">OFF</td>
+      <td class="off" data-name="Som" data-date="2026-05-03">OFF</td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#4A90D9">5h</div>
+        <div class="contract">/ 40h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:13%;background:#4A90D9"></div></div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#E8845A"></div>
+          <div>
+            <div class="staff-name">Dongjune</div>
+            <span class="role-badge" style="background:#EBF5FB;color:#1A5276">Supervisor</span>
+          </div>
+        </div>
+      </td>
+      <td class="shift" data-name="Dongjune" data-date="2026-04-27" style="border-top:3px solid #E8845A">
+        <div class="shift-time">13:00 – 21:30</div>
+        <div class="shift-hrs">7.5h</div>
+        <span class="break-badge">Break 17:15–18:15 (1h)</span>
+      </td>
+      <td class="shift" data-name="Dongjune" data-date="2026-04-28" style="border-top:3px solid #E8845A">
+        <div class="shift-time">07:30 – 14:00</div>
+        <div class="shift-hrs">6h</div>
+        <span class="break-badge">Break 10:45–11:15 (0.5h)</span>
+      </td>
+      <td class="off" data-name="Dongjune" data-date="2026-04-29">OFF</td>
+      <td class="shift" data-name="Dongjune" data-date="2026-04-30" style="border-top:3px solid #E8845A">
+        <div class="shift-time">07:30 – 14:00</div>
+        <div class="shift-hrs">6h</div>
+        <span class="break-badge">Break 10:45–11:15 (0.5h)</span>
+      </td>
+      <td class="shift" data-name="Dongjune" data-date="2026-05-01" style="border-top:3px solid #E8845A">
+        <div class="shift-time">07:30 – 16:00</div>
+        <div class="shift-hrs">7.5h</div>
+        <span class="break-badge">Break 11:45–12:45 (1h)</span>
+      </td>
+      <td class="shift" data-name="Dongjune" data-date="2026-05-02" style="border-top:3px solid #E8845A">
+        <div class="shift-time">07:30 – 18:00</div>
+        <div class="shift-hrs">9.5h</div>
+        <span class="break-badge">Break 12:45–13:45 (1h)</span>
+      </td>
+      <td class="shift" data-name="Dongjune" data-date="2026-05-03" style="border-top:3px solid #E8845A">
+        <div class="shift-time">09:30 – 21:30</div>
+        <div class="shift-hrs">11h</div>
+        <span class="break-badge">Break 15:30–16:30 (1h)</span>
+      </td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#E74C3C">47.5h</div>
+        <div class="contract">/ 40h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:100%;background:#E74C3C"></div></div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#6BBF6B"></div>
+          <div>
+            <div class="staff-name">Daeun</div>
+            <span class="role-badge" style="background:#EAFAF1;color:#1E8449">Team Member</span>
+          </div>
+        </div>
+      </td>
+      <td class="shift" data-name="Daeun" data-date="2026-04-27" style="border-top:3px solid #6BBF6B">
+        <div class="shift-time">13:00 – 17:00</div>
+        <div class="shift-hrs">3.5h</div>
+        <span class="break-badge">Break 15:00–15:30 (0.5h)</span>
+      </td>
+      <td class="off" data-name="Daeun" data-date="2026-04-28">OFF</td>
+      <td class="shift" data-name="Daeun" data-date="2026-04-29" style="border-top:3px solid #6BBF6B">
+        <div class="shift-time">12:00 – 18:00</div>
+        <div class="shift-hrs">5h</div>
+        <span class="break-badge">Break 15:00–16:00 (1h)</span>
+      </td>
+      <td class="off" data-name="Daeun" data-date="2026-04-30">OFF</td>
+      <td class="shift" data-name="Daeun" data-date="2026-05-01" style="border-top:3px solid #6BBF6B">
+        <div class="shift-time">12:00 – 18:00</div>
+        <div class="shift-hrs">5h</div>
+        <span class="break-badge">Break 15:00–16:00 (1h)</span>
+      </td>
+      <td class="off" data-name="Daeun" data-date="2026-05-02">OFF</td>
+      <td class="off" data-name="Daeun" data-date="2026-05-03">OFF</td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#6BBF6B">13.5h</div>
+        <div class="contract">/ 20h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:68%;background:#6BBF6B"></div></div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#B57BCC"></div>
+          <div>
+            <div class="staff-name">Haeun</div>
+            <span class="role-badge" style="background:#EAFAF1;color:#1E8449">Team Member</span>
+          </div>
+        </div>
+      </td>
+      <td class="shift" data-name="Haeun" data-date="2026-04-27" style="border-top:3px solid #B57BCC">
+        <div class="shift-time">13:00 – 21:30</div>
+        <div class="shift-hrs">7.5h</div>
+        <span class="break-badge">Break 17:15–18:15 (1h)</span>
+      </td>
+      <td class="off" data-name="Haeun" data-date="2026-04-28">OFF</td>
+      <td class="off" data-name="Haeun" data-date="2026-04-29">OFF</td>
+      <td class="off" data-name="Haeun" data-date="2026-04-30">OFF</td>
+      <td class="off" data-name="Haeun" data-date="2026-05-01">OFF</td>
+      <td class="off" data-name="Haeun" data-date="2026-05-02">OFF</td>
+      <td class="off" data-name="Haeun" data-date="2026-05-03">OFF</td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#B57BCC">7.5h</div>
+        <div class="contract">/ 20h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:38%;background:#B57BCC"></div></div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#E8C45A"></div>
+          <div>
+            <div class="staff-name">Jin</div>
+            <span class="role-badge" style="background:#EAFAF1;color:#1E8449">Team Member</span>
+          </div>
+        </div>
+      </td>
+      <td class="off" data-name="Jin" data-date="2026-04-27">OFF</td>
+      <td class="off" data-name="Jin" data-date="2026-04-28">OFF</td>
+      <td class="shift" data-name="Jin" data-date="2026-04-29" style="border-top:3px solid #E8C45A">
+        <div class="shift-time">07:30 – 16:00</div>
+        <div class="shift-hrs">7.5h</div>
+        <span class="break-badge">Break 11:45–12:45 (1h)</span>
+      </td>
+      <td class="shift" data-name="Jin" data-date="2026-04-30" style="border-top:3px solid #E8C45A">
+        <div class="shift-time">07:30 – 14:00</div>
+        <div class="shift-hrs">6h</div>
+        <span class="break-badge">Break 10:45–11:15 (0.5h)</span>
+      </td>
+      <td class="shift" data-name="Jin" data-date="2026-05-01" style="border-top:3px solid #E8C45A">
+        <div class="shift-time">07:30 – 21:30</div>
+        <div class="shift-hrs">13h</div>
+        <span class="break-badge">Break 14:30–15:30 (1h)</span>
+      </td>
+      <td class="shift" data-name="Jin" data-date="2026-05-02" style="border-top:3px solid #E8C45A">
+        <div class="shift-time">07:30 – 21:00</div>
+        <div class="shift-hrs">12.5h</div>
+        <span class="break-badge">Break 14:15–15:15 (1h)</span>
+      </td>
+      <td class="off" data-name="Jin" data-date="2026-05-03">OFF</td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#E8C45A">39h</div>
+        <div class="contract">/ 40h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:98%;background:#E8C45A"></div></div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#5AB8CC"></div>
+          <div>
+            <div class="staff-name">KaYan</div>
+            <span class="role-badge" style="background:#EAFAF1;color:#1E8449">Team Member</span>
+          </div>
+        </div>
+      </td>
+      <td class="off" data-name="KaYan" data-date="2026-04-27">OFF</td>
+      <td class="shift" data-name="KaYan" data-date="2026-04-28" style="border-top:3px solid #5AB8CC">
+        <div class="shift-time">07:30 – 13:00</div>
+        <div class="shift-hrs">5h</div>
+        <span class="break-badge">Break 10:15–10:45 (0.5h)</span>
+      </td>
+      <td class="off" data-name="KaYan" data-date="2026-04-29">OFF</td>
+      <td class="off" data-name="KaYan" data-date="2026-04-30">OFF</td>
+      <td class="off" data-name="KaYan" data-date="2026-05-01">OFF</td>
+      <td class="shift" data-name="KaYan" data-date="2026-05-02" style="border-top:3px solid #5AB8CC">
+        <div class="shift-time">13:00 – 22:00</div>
+        <div class="shift-hrs">8h</div>
+        <span class="break-badge">Break 17:30–18:30 (1h)</span>
+      </td>
+      <td class="shift" data-name="KaYan" data-date="2026-05-03" style="border-top:3px solid #5AB8CC">
+        <div class="shift-time">09:30 – 14:00</div>
+        <div class="shift-hrs">4h</div>
+        <span class="break-badge">Break 11:45–12:15 (0.5h)</span>
+      </td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#5AB8CC">17h</div>
+        <div class="contract">/ 20h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:85%;background:#5AB8CC"></div></div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#E87A8A"></div>
+          <div>
+            <div class="staff-name">Linna</div>
+            <span class="role-badge" style="background:#EAFAF1;color:#1E8449">Team Member</span>
+          </div>
+        </div>
+      </td>
+      <td class="shift" data-name="Linna" data-date="2026-04-27" style="border-top:3px solid #E87A8A">
+        <div class="shift-time">07:30 – 13:00</div>
+        <div class="shift-hrs">5h</div>
+        <span class="break-badge">Break 10:15–10:45 (0.5h)</span>
+      </td>
+      <td class="shift" data-name="Linna" data-date="2026-04-28" style="border-top:3px solid #E87A8A">
+        <div class="shift-time">14:00 – 21:30</div>
+        <div class="shift-hrs">6.5h</div>
+        <span class="break-badge">Break 17:45–18:45 (1h)</span>
+      </td>
+      <td class="shift" data-name="Linna" data-date="2026-04-29" style="border-top:3px solid #E87A8A">
+        <div class="shift-time">16:00 – 21:30</div>
+        <div class="shift-hrs">5h</div>
+        <span class="break-badge">Break 18:45–19:15 (0.5h)</span>
+      </td>
+      <td class="shift" data-name="Linna" data-date="2026-04-30" style="border-top:3px solid #E87A8A">
+        <div class="shift-time">14:00 – 21:30</div>
+        <div class="shift-hrs">6.5h</div>
+        <span class="break-badge">Break 17:45–18:45 (1h)</span>
+      </td>
+      <td class="shift" data-name="Linna" data-date="2026-05-01" style="border-top:3px solid #E87A8A">
+        <div class="shift-time">16:00 – 21:30</div>
+        <div class="shift-hrs">5h</div>
+        <span class="break-badge">Break 18:45–19:15 (0.5h)</span>
+      </td>
+      <td class="off" data-name="Linna" data-date="2026-05-02">OFF</td>
+      <td class="shift" data-name="Linna" data-date="2026-05-03" style="border-top:3px solid #E87A8A">
+        <div class="shift-time">09:30 – 21:30</div>
+        <div class="shift-hrs">11h</div>
+        <span class="break-badge">Break 15:30–16:30 (1h)</span>
+      </td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#E87A8A">39h</div>
+        <div class="contract">/ 40h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:98%;background:#E87A8A"></div></div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#7AB87A"></div>
+          <div>
+            <div class="staff-name">Riwon</div>
+            <span class="role-badge" style="background:#EAFAF1;color:#1E8449">Team Member</span>
+          </div>
+        </div>
+      </td>
+      <td class="off" data-name="Riwon" data-date="2026-04-27">OFF</td>
+      <td class="off" data-name="Riwon" data-date="2026-04-28">OFF</td>
+      <td class="off" data-name="Riwon" data-date="2026-04-29">OFF</td>
+      <td class="off" data-name="Riwon" data-date="2026-04-30">OFF</td>
+      <td class="off" data-name="Riwon" data-date="2026-05-01">OFF</td>
+      <td class="off" data-name="Riwon" data-date="2026-05-02">OFF</td>
+      <td class="off" data-name="Riwon" data-date="2026-05-03">OFF</td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#7AB87A">0h</div>
+        <div class="contract">/ 20h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:0%;background:#7AB87A"></div></div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0;border-bottom:1px solid #E8ECF0">
+        <div class="staff-name-cell">
+          <div class="staff-dot" style="background:#CC8C5A"></div>
+          <div>
+            <div class="staff-name">Yujin</div>
+            <span class="role-badge" style="background:#EAFAF1;color:#1E8449">Team Member</span>
+          </div>
+        </div>
+      </td>
+      <td class="off" data-name="Yujin" data-date="2026-04-27">OFF</td>
+      <td class="off" data-name="Yujin" data-date="2026-04-28">OFF</td>
+      <td class="off" data-name="Yujin" data-date="2026-04-29">OFF</td>
+      <td class="off" data-name="Yujin" data-date="2026-04-30">OFF</td>
+      <td class="off" data-name="Yujin" data-date="2026-05-01">OFF</td>
+      <td class="off" data-name="Yujin" data-date="2026-05-02">OFF</td>
+      <td class="off" data-name="Yujin" data-date="2026-05-03">OFF</td>
+      <td class="hours-cell">
+        <div class="hours-number" style="color:#CC8C5A">0h</div>
+        <div class="contract">/ 20h</div>
+        <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:0%;background:#CC8C5A"></div></div>
+      </td>
+    </tr>
     <tr class="totals-row">
-      <td class="total-label">Daily Hours</td>
-      <td class="total-cell">6.5h</td><td class="total-cell">7.0h</td><td class="total-cell">6.5h</td><td class="total-cell">7.0h</td><td class="total-cell">0h</td><td class="total-cell">0h</td><td class="total-cell">0h</td>
-      <td class="total-grand">27.0h</td>
+      <td class="total-label">Daily Total Hours</td>
+      <td class="total-cell">28.5h</td>
+      <td class="total-cell">17.5h</td>
+      <td class="total-cell">17.5h</td>
+      <td class="total-cell">18.5h</td>
+      <td class="total-cell">30.5h</td>
+      <td class="total-cell">30h</td>
+      <td class="total-cell">26h</td>
+      <td class="total-grand">168.5h</td>
     </tr>
   </tbody>
 </table>
 </div>
 
-<div class="footer">
-  Generated by Bingsoo ROTA System · 20 Apr 2026 18:08
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-(async () => {
-  try {
-    const sb = supabase.createClient(
-      'https://psxcnlymrttedipuonac.supabase.co',
-      'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY'
-    );
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) return;
-    const allCells = document.querySelectorAll('[data-date]');
-    const dates = [...new Set([...allCells].map(c => c.dataset.date))].sort();
-    if (!dates.length) return;
-    const { data: overrides, error } = await sb.rpc('get_week_overrides', {
-      p_week_start: dates[0], p_week_end: dates[dates.length - 1]
-    });
-    if (error || !overrides?.length) return;
-    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-    overrides.forEach(ov => {
-      const cell = document.querySelector(`[data-name="${ov.staff_name}"][data-date="${ov.date}"]`);
-      if (!cell) return;
-      cell.style.background = '#FFF8E1';
-      cell.style.borderTop = '3px solid #F59E0B';
-      const timeEl = cell.querySelector('.shift-time');
-      if (timeEl) timeEl.innerHTML = `${ov.start_time} – ${ov.end_time} <span style="color:#D97706;font-size:0.75rem">✏️</span>`;
-      const hrs = (toMin(ov.end_time) - toMin(ov.start_time)) / 60 - (ov.break_hrs || 0);
-      const hrsEl = cell.querySelector('.shift-hrs');
-      if (hrsEl) hrsEl.textContent = hrs.toFixed(1) + 'h';
-      if (ov.note) {
-        let noteEl = cell.querySelector('.override-note');
-        if (!noteEl) { noteEl = document.createElement('div'); noteEl.className = 'override-note'; cell.appendChild(noteEl); }
-        noteEl.style.cssText = 'font-size:0.7rem;color:#92400e;font-style:italic;margin-top:3px;';
-        noteEl.textContent = '✏️ ' + ov.note;
-      }
-    });
-  } catch(e) {}
-})();
-</script>
+<div class="footer">Generated by Bingsoo AI · 24 April 2026</div>
 
 </body>
 </html>
