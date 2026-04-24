@@ -341,18 +341,29 @@ function updateIndexHtml(html, filename, rota) {
   const shortLabel = week_label.replace(/\s+\d{4}$/, '').replace('–', '-').trim();
   const mobileLabel = `${wNum} · ${shortLabel}`;
 
-  // Count existing weeks (data-file= occurrences)
+  // 0. De-dupe: remove any existing <li> / <option> with this filename so
+  //    re-publishing the same week doesn't stack multiple sidebar entries.
+  const liRe = new RegExp(
+    `[ \\t]*<li[^>]*data-file="${filename.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}"[^>]*>[\\s\\S]*?<\\/li>\\s*\\n?`,
+    'g'
+  );
+  html = html.replace(liRe, '');
+  const optRe = new RegExp(
+    `\\s*<option[^>]*value="${filename.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}"[^>]*>[^<]*<\\/option>`,
+    'g'
+  );
+  html = html.replace(optRe, '');
+
+  // 1. Update week count text — recount AFTER de-dupe so it's accurate
   const existingCount = (html.match(/data-file=/g) || []).length;
   const newCount = existingCount + 1;
-
-  // 1. Update week count text
   const oldCountMatch = html.match(/📁 (\d+) weeks? available/);
   if (oldCountMatch) {
     html = replaceFirst(html, oldCountMatch[0], `📁 ${newCount} weeks available`);
   }
 
-  // 2. Deactivate existing active li
-  html = html.split('<li class="active"').join('<li class="');
+  // 2. Deactivate existing active li (close the class attribute properly)
+  html = html.split('<li class="active"').join('<li class=""');
 
   // 3. Deactivate existing selected option
   html = html.split(' selected>').join('>');
