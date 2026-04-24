@@ -693,10 +693,26 @@ function appendMsg(role, content) {
   const div = document.createElement('div');
   div.className = `msg ${isUser ? 'user' : 'ai'}`;
 
+  // Extract rota_json from content — supports <rota_json> tags OR ```json code blocks
+  function extractRotaJson(raw) {
+    // Try <rota_json>...</rota_json> first
+    const tagMatch = raw.match(/<rota_json>([\s\S]*?)<\/rota_json>/);
+    if (tagMatch) return tagMatch[1].trim();
+    // Try ```json ... ``` block that contains "week_label"
+    const codeMatch = raw.match(/```(?:json)?\s*(\{[\s\S]*?"week_label"[\s\S]*?\})\s*```/);
+    if (codeMatch) return codeMatch[1].trim();
+    // Try bare JSON object containing "week_label" and "shifts"
+    const bareMatch = raw.match(/(\{[\s\S]*?"week_label"[\s\S]*?"shifts"[\s\S]*?\})\s*$/);
+    if (bareMatch) return bareMatch[1].trim();
+    return null;
+  }
+
+  const rotaRaw = isUser ? null : extractRotaJson(content);
+
   // Strip rota_json block from display, replace with friendly notice
-  const displayContent = isUser
-    ? content
-    : content.replace(/<rota_json>[\s\S]*?<\/rota_json>/g, '\n*[ROTA data ready — click Publish button below to go live]*\n');
+  const displayContent = isUser ? content : content
+    .replace(/<rota_json>[\s\S]*?<\/rota_json>/g, '\n*[ROTA data ready — click Publish button below]*\n')
+    .replace(/```(?:json)?\s*\{[\s\S]*?"week_label"[\s\S]*?\}\s*```/g, '\n*[ROTA data ready — click Publish button below]*\n');
 
   const rendered = isUser
     ? escHtml(displayContent).replace(/\n/g, '<br>')
@@ -710,20 +726,17 @@ function appendMsg(role, content) {
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 
-  // Detect rota_json for publish button
-  if (role === 'ai') {
-    const jsonMatch = content.match(/<rota_json>([\s\S]*?)<\/rota_json>/);
-    if (jsonMatch) {
-      try {
-        const rotaData = JSON.parse(jsonMatch[1].trim());
-        lastRotaJson = rotaData;
-        const pubBtn = document.createElement('button');
-        pubBtn.className = 'publish-rota-btn';
-        pubBtn.innerHTML = '📤 Publish this ROTA to website';
-        pubBtn.onclick = () => openPublishModal(rotaData);
-        div.appendChild(pubBtn);
-      } catch(e) { console.warn('rota_json parse error', e); }
-    }
+  // Show publish button if rota JSON detected
+  if (role === 'ai' && rotaRaw) {
+    try {
+      const rotaData = JSON.parse(rotaRaw);
+      lastRotaJson = rotaData;
+      const pubBtn = document.createElement('button');
+      pubBtn.className = 'publish-rota-btn';
+      pubBtn.innerHTML = '📤 Publish this ROTA to website';
+      pubBtn.onclick = () => openPublishModal(rotaData);
+      div.appendChild(pubBtn);
+    } catch(e) { console.warn('rota_json parse error', e); }
   }
 
   saveSession();
