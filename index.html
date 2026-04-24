@@ -199,6 +199,11 @@ const STATIC_ROTA_DARK_CSS = `
   .shift-time { color: #a0a0c8 !important; }
   .shift-hrs { color: #8888cc !important; }
   .off-badge { background: #1e1e38 !important; color: #6666aa !important; }
+  html { scrollbar-color: #2a2a40 #0f0f1a; }
+  ::-webkit-scrollbar { width: 10px !important; height: 10px !important; }
+  ::-webkit-scrollbar-track { background: #0f0f1a !important; }
+  ::-webkit-scrollbar-thumb { background: #2a2a40 !important; border-radius: 5px !important; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a55 !important; }
 `;
 
 function syncDarkToFrame(frame) {
