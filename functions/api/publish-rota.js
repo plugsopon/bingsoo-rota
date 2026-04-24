@@ -299,7 +299,13 @@ async function ghPut(path, content, message, sha, token) {
     },
     body: JSON.stringify(body),
   });
-  return r.json();
+  const text = await r.text();
+  if (!r.ok) {
+    let msg = text;
+    try { msg = JSON.parse(text)?.message || text; } catch(_) {}
+    throw new Error(`GitHub API ${r.status}: ${msg}`);
+  }
+  return JSON.parse(text);
 }
 
 // ── index.html updater ────────────────────────────────────────────────────────
