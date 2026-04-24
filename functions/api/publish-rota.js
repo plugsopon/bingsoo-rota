@@ -374,6 +374,71 @@ function updateIndexHtml(html, filename, rota) {
   return html;
 }
 
+// ── Supabase shift writer ─────────────────────────────────────────────────────
+async function writeShiftsToSupabase(rota, userToken) {
+  const { week_start, week_end, staff, days, shifts } = rota;
+  if (!staff || !days || !shifts) return;
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${userToken}`,
+    apikey: SUPABASE_KEY,
+  };
+
+  // 1. Fetch all staff (id + name) so we can map shift-by-name to staff_id
+  const sRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/staff?select=id,name`,
+    { headers }
+  );
+  if (!sRes.ok) throw new Error(`staff fetch failed: ${sRes.status}`);
+  const staffRows = await sRes.json();
+  const nameToId = {};
+  for (const s of staffRows) nameToId[s.name] = s.id;
+
+  // 2. Delete existing rota_shifts for the week range (so stale rows go away)
+  const delRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/rota_shifts?date=gte.${week_start}&date=lte.${week_end}`,
+    { method: 'DELETE', headers }
+  );
+  if (!delRes.ok && delRes.status !== 404) {
+    const body = await delRes.text().catch(() => '');
+    throw new Error(`delete failed ${delRes.status}: ${body}`);
+  }
+
+  // 3. Build insert payload from shifts map
+  const rows = [];
+  for (const s of staff) {
+    const sid = nameToId[s.name];
+    if (!sid) continue; // staff not in DB — skip
+    for (const d of days) {
+      const sh = shifts?.[s.name]?.[d.date];
+      if (!sh || sh === 'off') continue;
+      const work = shiftHours(sh);
+      rows.push({
+        staff_id:   sid,
+        date:       d.date,
+        start_time: sh.start,
+        end_time:   sh.end,
+        break_hrs:  sh.break_hrs || 0,
+        work_hrs:   work,
+      });
+    }
+  }
+
+  if (rows.length === 0) return;
+
+  // 4. Bulk insert
+  const insRes = await fetch(`${SUPABASE_URL}/rest/v1/rota_shifts`, {
+    method: 'POST',
+    headers: { ...headers, Prefer: 'return=minimal' },
+    body: JSON.stringify(rows),
+  });
+  if (!insRes.ok) {
+    const body = await insRes.text().catch(() => '');
+    throw new Error(`insert failed ${insRes.status}: ${body}`);
+  }
+}
+
 // ── Filename generator ────────────────────────────────────────────────────────
 function buildFilename(rota) {
   // rota_DDMMYYYY_DDMMYYYY.html
@@ -468,6 +533,15 @@ export async function onRequestPost(context) {
       return json({ error: `GitHub error (CSV): ${csvResult.message}` }, 500);
     }
 
+    // ── 7b. Write shifts to Supabase so Edit ROTA / My Schedule see them
+    let supabaseWarning = null;
+    try {
+      await writeShiftsToSupabase(rotaJson, token);
+    } catch (err) {
+      // Non-fatal — GitHub publish succeeded, but Supabase write failed.
+      supabaseWarning = err.message;
+    }
+
     // ── 8. Update index.html ──────────────────────────────────────────
     const indexFile = await ghGet('index.html', ghToken);
     if (indexFile?.content) {
@@ -482,7 +556,12 @@ export async function onRequestPost(context) {
       );
     }
 
-    return json({ success: true, filename, weekLabel: rotaJson.week_label });
+    return json({
+      success: true,
+      filename,
+      weekLabel: rotaJson.week_label,
+      supabaseWarning, // null if OK, string if shifts write failed
+    });
 
   } catch (err) {
     return json({ error: err.message || 'Internal server error' }, 500);

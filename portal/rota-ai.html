@@ -1231,8 +1231,15 @@ async function confirmPublish() {
       status.style.color = '#ef4444';
       btn.disabled = false; btn.textContent = '✅ Confirm & Publish';
     } else {
-      status.textContent = `✅ Published! ${data.weekLabel} is now live. Page will update in ~1 minute.`;
-      status.style.color = '#22c55e';
+      let msg = `✅ Published! ${data.weekLabel} is now live. Page will update in ~1 minute.`;
+      if (data.supabaseWarning) {
+        msg += `\n\n⚠️ Shifts DB sync failed — Edit ROTA / My Schedule may not show this week.\nReason: ${data.supabaseWarning}`;
+        status.style.color = '#f59e0b';
+      } else {
+        status.style.color = '#22c55e';
+      }
+      status.textContent = msg;
+      status.style.whiteSpace = 'pre-line';
       btn.textContent = '✅ Published!';
     }
   } catch(err) {

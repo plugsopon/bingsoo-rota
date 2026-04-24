@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS public.rota_shifts (
 ALTER TABLE public.rota_shifts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone can insert generated shifts" ON public.rota_shifts;
+DROP POLICY IF EXISTS "Anyone can update generated shifts" ON public.rota_shifts;
+DROP POLICY IF EXISTS "Manager can delete shifts" ON public.rota_shifts;
 DROP POLICY IF EXISTS "Staff can read own shifts" ON public.rota_shifts;
 DROP POLICY IF EXISTS "Manager can read all shifts" ON public.rota_shifts;
 
@@ -31,6 +33,13 @@ CREATE POLICY "Anyone can insert generated shifts"
 CREATE POLICY "Anyone can update generated shifts"
   ON public.rota_shifts FOR UPDATE
   USING (true) WITH CHECK (true);
+
+-- Managers can delete shifts (needed so Publish can clear stale rows before re-insert)
+CREATE POLICY "Manager can delete shifts"
+  ON public.rota_shifts FOR DELETE
+  USING (
+    EXISTS (SELECT 1 FROM public.staff s WHERE s.id = auth.uid() AND s.is_manager = true)
+  );
 
 -- Staff can read their own shifts
 CREATE POLICY "Staff can read own shifts"
