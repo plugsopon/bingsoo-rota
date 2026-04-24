@@ -161,6 +161,24 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 .manage-src-btn { display: block; width: 100%; background: #f8f9ff; border: 1.5px dashed #c4c9f0; border-radius: 8px; padding: 8px; font-size: 12px; color: #667eea; cursor: pointer; font-weight: 600; text-align: center; text-decoration: none; transition: all 0.15s; }
 .manage-src-btn:hover { background: #e8ebff; border-color: #667eea; }
 
+.publish-rota-btn {
+  display: block;
+  margin: 12px 0 4px 48px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.publish-rota-btn:hover { background: #5a6fd6; }
+#publish-modal { position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center; }
+[data-dark] #publish-box { background: #1a1a2e; color: #d0d0e8; }
+[data-dark] #publish-preview { background: #141426; color: #c0c0e0; }
+
 /* ── Dark mode ── */
 [data-dark] body                     { background: #0f0f1a; }
 [data-dark] .main                    { background: #0f0f1a; }
@@ -300,6 +318,20 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 
 </div>
 
+<!-- Publish ROTA Modal -->
+<div id="publish-modal" style="display:none">
+  <div id="publish-box" style="background:white;border-radius:18px;padding:28px;max-width:460px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.3)">
+    <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:8px">📤 Publish ROTA to Website</h2>
+    <p id="publish-week-info" style="font-size:0.88rem;color:#555;margin-bottom:18px"></p>
+    <div id="publish-preview" style="font-size:0.82rem;color:#444;background:#f8f9fa;border-radius:10px;padding:12px;margin-bottom:18px;max-height:200px;overflow-y:auto;line-height:1.7"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closePublishModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:white;cursor:pointer;font-size:0.88rem">Cancel</button>
+      <button id="publish-confirm-btn" onclick="confirmPublish()" style="padding:8px 20px;background:#667eea;color:white;border:none;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer">✅ Confirm &amp; Publish</button>
+    </div>
+    <p id="publish-status" style="margin-top:12px;font-size:0.82rem;text-align:center;min-height:18px"></p>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://psxcnlymrttedipuonac.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Kr3F8IwLFSHJRkGmVf86Kw_gmra-svY';
@@ -312,6 +344,7 @@ const ROLE_ORDER = { 'Manager':0,'Supervisor':1,'Team Leader':2,'Team Member':3,
 let conversationHistory = [];
 let contextLoaded = false;
 let systemPrompt   = '';
+let lastRotaJson   = null;
 
 // ── Session persistence (localStorage) ───────────────────────────────────
 const SESSION_KEY = 'bingsoo_chat_session_v1';
@@ -546,9 +579,42 @@ Use this sales data to guide staffing levels — higher-revenue days need more s
 Use markdown tables like:
 | Staff | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
 |-------|-----|-----|-----|-----|-----|-----|-----|
-| Name  | Morning | Off | Mid | ... | ... | Evening | Off |
+| Name  | 07:00-14:00 | Off | 14:00-21:30 | ... | ... | 07:00-14:00 | Off |
 
-Always explain your reasoning and flag potential issues.`;
+Show times as HH:MM-HH:MM format. Always explain your reasoning and flag potential issues.
+
+## IMPORTANT: Always end a full ROTA with a JSON block
+When you provide a complete weekly ROTA (not just a partial suggestion), you MUST end your response with a machine-readable block exactly like this (no extra text after it):
+
+<rota_json>
+{
+  "week_label": "04 May – 10 May 2026",
+  "week_start": "2026-05-04",
+  "week_end": "2026-05-10",
+  "week_num": 19,
+  "staff": [
+    {"name": "Som", "role": "Manager", "contract_hours": 40}
+  ],
+  "days": [
+    {"date": "2026-05-04", "day": "Monday", "demand": "LOW", "est_revenue": "£1,100", "weather": "☀️", "temp": "18°C", "rain": "0mm"}
+  ],
+  "shifts": {
+    "Som": {
+      "2026-05-04": {"start": "07:00", "end": "14:00", "break_hrs": 0.5, "break_start": "10:30", "break_end": "11:00"},
+      "2026-05-05": "off"
+    }
+  }
+}
+</rota_json>
+
+Rules for the JSON:
+- Every staff member must have an entry for ALL 7 days
+- "off" (string) means the person doesn't work that day
+- break_hrs: 0.5 for 30-min break, 1 for 1-hour break, 0 for no break
+- break_start/break_end: midpoint of shift (e.g. if shift 07:00-14:00, break at 10:30-11:00)
+- demand: "LOW", "MEDIUM", or "HIGH"
+- week_num: ISO week number
+- Include ALL staff (even those fully off that week)`;
 
     // ── Fetch context sources ──────────────────────────────────────────────
     status.textContent = 'Loading context sources…';
@@ -626,9 +692,14 @@ function appendMsg(role, content) {
   const div = document.createElement('div');
   div.className = `msg ${isUser ? 'user' : 'ai'}`;
 
+  // Strip rota_json block from display, replace with friendly notice
+  const displayContent = isUser
+    ? content
+    : content.replace(/<rota_json>[\s\S]*?<\/rota_json>/g, '\n*[ROTA data ready — click Publish button below to go live]*\n');
+
   const rendered = isUser
-    ? escHtml(content).replace(/\n/g, '<br>')
-    : (typeof marked !== 'undefined' ? marked.parse(content) : escHtml(content));
+    ? escHtml(displayContent).replace(/\n/g, '<br>')
+    : (typeof marked !== 'undefined' ? marked.parse(displayContent) : escHtml(displayContent));
 
   div.innerHTML = `
     <div class="msg-avatar">${isUser ? '👤' : '🤖'}</div>
@@ -637,6 +708,23 @@ function appendMsg(role, content) {
     </div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+
+  // Detect rota_json for publish button
+  if (role === 'ai') {
+    const jsonMatch = content.match(/<rota_json>([\s\S]*?)<\/rota_json>/);
+    if (jsonMatch) {
+      try {
+        const rotaData = JSON.parse(jsonMatch[1].trim());
+        lastRotaJson = rotaData;
+        const pubBtn = document.createElement('button');
+        pubBtn.className = 'publish-rota-btn';
+        pubBtn.innerHTML = '📤 Publish this ROTA to website';
+        pubBtn.onclick = () => openPublishModal(rotaData);
+        div.appendChild(pubBtn);
+      } catch(e) { console.warn('rota_json parse error', e); }
+    }
+  }
+
   saveSession();
   autoSaveToHistory();
   return div;
@@ -1012,6 +1100,86 @@ window.addEventListener('message', e => {
   if (e.data.dark) document.documentElement.setAttribute('data-dark', '');
   else document.documentElement.removeAttribute('data-dark');
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── Publish ROTA ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+let publishRotaData = null;
+
+function openPublishModal(rotaData) {
+  publishRotaData = rotaData;
+  const modal   = document.getElementById('publish-modal');
+  const info    = document.getElementById('publish-week-info');
+  const preview = document.getElementById('publish-preview');
+
+  info.textContent = `Week: ${rotaData.week_label} · ${rotaData.staff?.length || 0} staff`;
+
+  // Build preview table
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:0.78rem">';
+  html += '<tr><th style="text-align:left;padding:2px 6px;color:#888">Staff</th>';
+  (rotaData.days || []).forEach(d => {
+    html += `<th style="padding:2px 4px;color:#888">${d.day.slice(0,3)}</th>`;
+  });
+  html += '</tr>';
+  (rotaData.staff || []).forEach(s => {
+    html += `<tr><td style="padding:2px 6px;font-weight:600">${s.name}</td>`;
+    (rotaData.days || []).forEach(d => {
+      const shift = rotaData.shifts?.[s.name]?.[d.date];
+      if (!shift || shift === 'off') {
+        html += '<td style="text-align:center;color:#bbb;padding:2px">–</td>';
+      } else {
+        html += `<td style="text-align:center;font-size:0.72rem;padding:2px">${shift.start}–${shift.end}</td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</table>';
+  preview.innerHTML = html;
+
+  document.getElementById('publish-status').textContent = '';
+  document.getElementById('publish-confirm-btn').disabled = false;
+  document.getElementById('publish-confirm-btn').textContent = '✅ Confirm & Publish';
+  modal.style.display = 'flex';
+}
+
+function closePublishModal() {
+  document.getElementById('publish-modal').style.display = 'none';
+}
+
+async function confirmPublish() {
+  const btn    = document.getElementById('publish-confirm-btn');
+  const status = document.getElementById('publish-status');
+  btn.disabled = true;
+  btn.textContent = 'Publishing…';
+  status.textContent = '⏳ Generating files and pushing to GitHub…';
+  status.style.color = '#888';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { status.textContent = '❌ Not logged in'; return; }
+
+    const res = await fetch('/api/publish-rota', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ rotaJson: publishRotaData })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      status.textContent = `❌ Error: ${data.error || 'Unknown error'}`;
+      status.style.color = '#ef4444';
+      btn.disabled = false; btn.textContent = '✅ Confirm & Publish';
+    } else {
+      status.textContent = `✅ Published! ${data.weekLabel} is now live. Page will update in ~1 minute.`;
+      status.style.color = '#22c55e';
+      btn.textContent = '✅ Published!';
+    }
+  } catch(err) {
+    status.textContent = `❌ Network error: ${err.message}`;
+    status.style.color = '#ef4444';
+    btn.disabled = false; btn.textContent = '✅ Confirm & Publish';
+  }
+}
 
 init();
 </script>
