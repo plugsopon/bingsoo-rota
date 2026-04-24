@@ -272,7 +272,8 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 
     <div class="panel-card">
       <h3>⚡ Quick Prompts</h3>
-      <button class="quick-btn" onclick="quickPrompt('Generate a fair ROTA draft for this week based on the availability data. Show it as a table with each staff member\'s shifts per day (Morning / Mid / Evening / Off). Explain your reasoning.')">📋 Generate ROTA draft</button>
+      <button class="quick-btn" onclick="quickPrompt('Generate a complete weekly ROTA for this week. Include a summary table and shift-by-shift reasoning. At the very end of your response, output the rota_json block with all staff and all 7 days so the Publish button appears.')">📋 Generate ROTA draft</button>
+      <button class="quick-btn" onclick="quickPrompt('Output the rota_json block for the ROTA you just generated, so I can publish it to the website.')">📤 Get Publish JSON</button>
       <button class="quick-btn" onclick="quickPrompt('Who is available each day this week? Give me a day-by-day breakdown showing who is available in the morning and who is available in the evening.')">🌅 Daily availability breakdown</button>
       <button class="quick-btn" onclick="quickPrompt('Are there any days where we might be understaffed this week? Flag any coverage gaps or days with too few staff.')">⚠️ Check coverage gaps</button>
       <button class="quick-btn" onclick="quickPrompt('Show me each staff member\'s total available hours this week. Compare against their contract hours and flag anyone who is under or over.')">⏱ Hours vs contract summary</button>
