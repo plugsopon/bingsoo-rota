@@ -44,13 +44,26 @@ function demandStyle(demand) {
 
 // ── Hours calculation ─────────────────────────────────────────────────────────
 function parseTime(t) {
+  if (typeof t !== 'string' || !t.includes(':')) return NaN;
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
 }
 
+// Treat a shift as valid only if it has start+end strings. Malformed shifts
+// (e.g. AI output with undefined fields) are treated as 'off' so publish
+// doesn't crash on a single bad row.
+function isValidShift(shift) {
+  return shift && shift !== 'off'
+      && typeof shift.start === 'string'
+      && typeof shift.end   === 'string'
+      && shift.start.includes(':')
+      && shift.end.includes(':');
+}
+
 function shiftHours(shift) {
-  if (!shift || shift === 'off') return 0;
+  if (!isValidShift(shift)) return 0;
   const mins = parseTime(shift.end) - parseTime(shift.start);
+  if (!isFinite(mins)) return 0;
   return Math.round((mins / 60 - (shift.break_hrs || 0)) * 10) / 10;
 }
 
@@ -142,7 +155,7 @@ function generateHtml(rota) {
 
     const shiftCells = days.map(d => {
       const sh = shifts?.[s.name]?.[d.date];
-      if (!sh || sh === 'off') {
+      if (!isValidShift(sh)) {
         return `<td class="off" data-name="${s.name}" data-date="${d.date}">OFF</td>`;
       }
       const hrs = shiftHours(sh);
@@ -258,7 +271,7 @@ function generateCsv(rota) {
     let total = 0;
     const cells = days.map(d => {
       const sh = shifts?.[s.name]?.[d.date];
-      if (!sh || sh === 'off') return 'OFF';
+      if (!isValidShift(sh)) return 'OFF';
       const hrs = shiftHours(sh);
       total += hrs;
       return `${sh.start}-${sh.end}`;
@@ -412,7 +425,7 @@ async function writeShiftsToSupabase(rota, userToken) {
     if (!sid) continue; // staff not in DB — skip
     for (const d of days) {
       const sh = shifts?.[s.name]?.[d.date];
-      if (!sh || sh === 'off') continue;
+      if (!isValidShift(sh)) continue;
       const work = shiftHours(sh);
       rows.push({
         staff_id:   sid,

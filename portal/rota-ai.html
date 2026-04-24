@@ -1186,7 +1186,10 @@ function openPublishModal(rotaData) {
     html += `<tr><td style="padding:2px 6px;font-weight:600">${s.name}</td>`;
     (rotaData.days || []).forEach(d => {
       const shift = rotaData.shifts?.[s.name]?.[d.date];
-      if (!shift || shift === 'off') {
+      const valid = shift && shift !== 'off'
+                 && typeof shift.start === 'string' && shift.start.includes(':')
+                 && typeof shift.end   === 'string' && shift.end.includes(':');
+      if (!valid) {
         html += '<td style="text-align:center;color:#bbb;padding:2px">–</td>';
       } else {
         html += `<td style="text-align:center;font-size:0.72rem;padding:2px">${shift.start}–${shift.end}</td>`;
