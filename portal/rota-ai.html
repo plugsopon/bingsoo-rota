@@ -270,6 +270,12 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
       <div class="hist-list" id="hist-list"></div>
     </div>
 
+    <div class="panel-card" id="publish-panel" style="display:none">
+      <h3>📤 Publish ROTA</h3>
+      <p style="font-size:11px;color:#888;margin-bottom:8px">ROTA draft detected in this chat</p>
+      <button class="load-btn" style="background:#10b981" onclick="scanAndPublish()">📤 Publish to Website</button>
+    </div>
+
     <div class="panel-card">
       <h3>⚡ Quick Prompts</h3>
       <button class="quick-btn" onclick="quickPrompt('Generate a complete weekly ROTA for this week. Include a summary table and shift-by-shift reasoning. At the very end of your response, output the rota_json block with all staff and all 7 days so the Publish button appears.')">📋 Generate ROTA draft</button>
@@ -726,17 +732,17 @@ function appendMsg(role, content) {
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 
-  // Show publish button if rota JSON detected
-  if (role === 'ai' && rotaRaw) {
-    try {
-      const rotaData = JSON.parse(rotaRaw);
-      lastRotaJson = rotaData;
-      const pubBtn = document.createElement('button');
-      pubBtn.className = 'publish-rota-btn';
-      pubBtn.innerHTML = '📤 Publish this ROTA to website';
-      pubBtn.onclick = () => openPublishModal(rotaData);
-      div.appendChild(pubBtn);
-    } catch(e) { console.warn('rota_json parse error', e); }
+  // Show publish panel if any rota JSON found in this message
+  if (role === 'ai') {
+    const bubble = div.querySelector('.msg-bubble');
+    const rawText = bubble ? (bubble.innerText || bubble.textContent) : content;
+    const jsonStr = extractRotaJsonRobust(content) || extractRotaJsonRobust(rawText);
+    if (jsonStr) {
+      try {
+        JSON.parse(jsonStr); // validate
+        document.getElementById('publish-panel').style.display = 'block';
+      } catch(e) {}
+    }
   }
 
   saveSession();
@@ -1119,6 +1125,70 @@ window.addEventListener('message', e => {
 // ── Publish ROTA ──────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 let publishRotaData = null;
+
+// ── Robust JSON extractor using bracket counting (handles nested objects) ──
+function extractRotaJsonRobust(text) {
+  // 1. Try <rota_json> tag
+  const tagIdx = text.indexOf('<rota_json>');
+  if (tagIdx !== -1) {
+    const end = text.indexOf('</rota_json>', tagIdx);
+    if (end !== -1) return text.slice(tagIdx + 11, end).trim();
+  }
+  // 2. Find any { that is followed (somewhere) by "week_label" and "shifts"
+  //    Use bracket counting to extract the full object
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] !== '{') { i++; continue; }
+    // Found a {, count brackets to find its closing }
+    let depth = 0, j = i, inStr = false, esc = false;
+    while (j < text.length) {
+      const c = text[j];
+      if (esc) { esc = false; j++; continue; }
+      if (c === '\\' && inStr) { esc = true; j++; continue; }
+      if (c === '"') { inStr = !inStr; j++; continue; }
+      if (!inStr) {
+        if (c === '{') depth++;
+        else if (c === '}') { depth--; if (depth === 0) break; }
+      }
+      j++;
+    }
+    const candidate = text.slice(i, j + 1);
+    if (candidate.includes('"week_label"') && candidate.includes('"shifts"')) {
+      try { JSON.parse(candidate); return candidate; } catch(e) {}
+    }
+    i++;
+  }
+  return null;
+}
+
+// ── Scan all AI messages in current chat and find rota JSON ──
+function scanAndPublish() {
+  const bubbles = document.querySelectorAll('.msg.ai .msg-bubble');
+  let found = null;
+  // Search from latest message backwards
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    const text = bubbles[i].innerText || bubbles[i].textContent;
+    const raw = extractRotaJsonRobust(text);
+    if (raw) {
+      try { found = JSON.parse(raw); break; } catch(e) {}
+    }
+  }
+  // Also check stored conversationHistory (has original content with tags)
+  if (!found) {
+    for (let i = conversationHistory.length - 1; i >= 0; i--) {
+      if (conversationHistory[i].role !== 'assistant') continue;
+      const raw = extractRotaJsonRobust(conversationHistory[i].content);
+      if (raw) {
+        try { found = JSON.parse(raw); break; } catch(e) {}
+      }
+    }
+  }
+  if (!found) {
+    alert('No ROTA JSON found in this chat. Ask the AI to generate a full ROTA first, or click "Get Publish JSON".');
+    return;
+  }
+  openPublishModal(found);
+}
 
 function openPublishModal(rotaData) {
   publishRotaData = rotaData;
