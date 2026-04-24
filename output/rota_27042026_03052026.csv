@@ -1,17 +1,11 @@
-﻿,Role,27/04/2026,,,,,28/04/2026,,,,,29/04/2026,,,,,30/04/2026,,,,,01/05/2026,,,,,02/05/2026,,,,,03/05/2026,,,,,Weekly Hours
-Staff,,Monday,,,,,Tuesday,,,,,Wednesday,,,,,Thursday,,,,,Friday,,,,,Saturday,,,,,Sunday,,,,,
-,,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,Start,End,Break,Break Start,Break End,
-Demand,,LOW (~£1095),,,,,LOW (~£1061),,,,,LOW (~£1181),,,,,LOW (~£1028),,,,,MEDIUM (~£1473),,,,,HIGH (~£3272),,,,,HIGH (~£2320),,,,,
-Weather,,Rain:0mm | 19.9°C,,,,,Rain:0.6mm | 15.3°C,,,,,Rain:0mm | 16.9°C,,,,,Rain:0mm | 19.5°C,,,,,Rain:0mm | 19.9°C,,,,,Rain:0mm | 21.5°C,,,,,Rain:0.4mm | 20.5°C,,,,,
-
-Som,CM,07:00,14:00,0.5h,10:30,11:00,14:00,21:30,0.5h,17:45,18:15,07:00,14:00,0.5h,10:30,11:00,14:00,21:30,0.5h,17:45,18:15,OFF,,,,,OFF,,,,,OFF,,,,,27.0h
-Dongjune,SV,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
-Daeun,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
-Haeun,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
-Jin,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
-KaYan,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
-Linna,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
-Riwon,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
-Yujin,CA,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,OFF,,,,,0.0h
-
-Daily Hours,,6.5h,,,,,7.0h,,,,,6.5h,,,,,7.0h,,,,,0h,,,,,0h,,,,,0h,,,,,27.0h
+Bingsoo ROTA - 27 Apr – 3 May 2026
+Name,Role,Monday 27/04,Tuesday 28/04,Wednesday 29/04,Thursday 30/04,Friday 01/05,Saturday 02/05,Sunday 03/05,Total Hours
+Som,Manager,07:30-13:00,OFF,OFF,OFF,OFF,OFF,OFF,5
+Dongjune,Supervisor,13:00-21:30,07:30-14:00,OFF,07:30-14:00,07:30-16:00,07:30-18:00,09:30-21:30,47.5
+Daeun,Team Member,13:00-17:00,OFF,12:00-18:00,OFF,12:00-18:00,OFF,OFF,13.5
+Haeun,Team Member,13:00-21:30,OFF,OFF,OFF,OFF,OFF,OFF,7.5
+Jin,Team Member,OFF,OFF,07:30-16:00,07:30-14:00,07:30-21:30,07:30-21:00,OFF,39
+KaYan,Team Member,OFF,07:30-13:00,OFF,OFF,OFF,13:00-22:00,09:30-14:00,17
+Linna,Team Member,07:30-13:00,14:00-21:30,16:00-21:30,14:00-21:30,16:00-21:30,OFF,09:30-21:30,39
+Riwon,Team Member,OFF,OFF,OFF,OFF,OFF,OFF,OFF,0
+Yujin,Team Member,OFF,OFF,OFF,OFF,OFF,OFF,OFF,0
