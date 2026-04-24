@@ -68,6 +68,8 @@ END;
 $$;
 
 -- 4. Remove a staff member (manager-only)
+-- Cleans up dependent rows in case FK constraints aren't ON DELETE CASCADE
+-- (the `availability` table was created manually without CASCADE).
 CREATE OR REPLACE FUNCTION remove_staff_member(p_staff_id uuid)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -78,6 +80,20 @@ BEGIN
     RAISE EXCEPTION 'Not authorized';
   END IF;
 
+  -- Pre-clean dependents so any non-cascading FK doesn't block the delete.
+  DELETE FROM public.availability    WHERE staff_id = p_staff_id;
+  DELETE FROM public.rota_shifts     WHERE staff_id = p_staff_id;
+  DELETE FROM public.rota_overrides  WHERE staff_id = p_staff_id;
+
   DELETE FROM public.staff WHERE id = p_staff_id;
 END;
 $$;
+
+-- 5. (One-time fix) Make the availability FK cascade so future deletes are clean.
+-- Safe to re-run: drops constraint if exists then re-adds with CASCADE.
+ALTER TABLE public.availability
+  DROP CONSTRAINT IF EXISTS availability_staff_id_fkey;
+
+ALTER TABLE public.availability
+  ADD CONSTRAINT availability_staff_id_fkey
+  FOREIGN KEY (staff_id) REFERENCES public.staff(id) ON DELETE CASCADE;
