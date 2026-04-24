@@ -81,8 +81,10 @@ export async function onRequestPost(context) {
       }
     } catch (_) { /* use default */ }
 
+    // 90s timeout — full ROTA generation (9 staff × 7 days + reasoning +
+    // summary + rota_json block) regularly takes 60-80s on Haiku.
     const claudeController = new AbortController();
-    const claudeTimeout = setTimeout(() => claudeController.abort(), 55_000);
+    const claudeTimeout = setTimeout(() => claudeController.abort(), 90_000);
 
     let claudeRes;
     try {
