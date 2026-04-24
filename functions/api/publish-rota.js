@@ -271,13 +271,16 @@ function generateCsv(rota) {
 }
 
 // ── GitHub helpers ────────────────────────────────────────────────────────────
+const GH_HEADERS = {
+  Authorization: '',        // filled per-call
+  Accept: 'application/vnd.github+json',
+  'X-GitHub-Api-Version': '2022-11-28',
+  'User-Agent': 'bingsoo-rota-app',
+};
+
 async function ghGet(path, token) {
   const r = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+    headers: { ...GH_HEADERS, Authorization: `Bearer ${token}` },
   });
   return r.ok ? r.json() : null;
 }
@@ -291,12 +294,7 @@ async function ghPut(path, content, message, sha, token) {
   if (sha) body.sha = sha;
   const r = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`, {
     method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'Content-Type': 'application/json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+    headers: { ...GH_HEADERS, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   const text = await r.text();
