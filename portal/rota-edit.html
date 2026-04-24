@@ -29,7 +29,7 @@
     padding: 6px 14px; font-size: 13px; cursor: pointer;
   }
   .logout-btn:hover { background: rgba(255,255,255,0.25); }
-  .container { max-width: 1100px; margin: 28px auto; padding: 0 20px; }
+  .container { max-width: 1500px; margin: 28px auto; padding: 0 20px; }
   .nav-links { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
   .nav-link {
     background: white; color: #667eea; border: 2px solid #667eea;
@@ -55,15 +55,16 @@
   }
   .grid-card {
     background: white; border-radius: 14px; padding: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow-x: auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   }
   .grid-card h2 { font-size: 16px; color: #1a1a2e; margin-bottom: 16px; font-weight: 700; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
   th {
-    background: #f8f9ff; padding: 10px 12px; text-align: left;
+    background: #f8f9ff; padding: 10px 8px; text-align: left;
     font-weight: 600; color: #555; border-bottom: 2px solid #e5e7eb; white-space: nowrap;
   }
-  th.day-th { text-align: center; min-width: 130px; }
+  th.day-th { text-align: center; }
+  th.name-th { width: 120px; }
   td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   .name-cell { font-weight: 600; color: #1a1a2e; padding: 6px 12px; white-space: nowrap; }
@@ -97,9 +98,10 @@
     margin-top: 4px;
   }
   .time-input {
-    width: 56px; padding: 4px 4px; border: 1px solid #e5e7eb;
+    width: 50px; padding: 4px 2px; border: 1px solid #e5e7eb;
     border-radius: 6px; font-size: 11px; text-align: center; outline: none;
     background: #f9fafb; transition: all 0.15s; font-family: monospace;
+    min-width: 0;
   }
   .time-input:focus { border-color: #667eea; background: white; box-shadow: 0 0 0 2px rgba(102,126,234,0.15); }
   .time-input.has-override { border-color: #f59e0b; background: #fffbeb; font-weight: 600; }
@@ -360,7 +362,7 @@ async function loadData() {
   const dateObjs = dates.map(ds => new Date(ds + 'T00:00:00'));
 
   // Build table
-  let html = '<table><thead><tr><th style="min-width:130px">Name</th>';
+  let html = '<table><thead><tr><th class="name-th">Name</th>';
   dates.forEach((date, i) => {
     const isWE = i >= 5;
     html += `<th class="day-th ${isWE ? 'day-header-weekend' : ''}">${DAYS[i]}<br><span style="font-weight:400;font-size:11px">${formatShort(dateObjs[i])}</span></th>`;
