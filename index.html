@@ -352,10 +352,11 @@ async function init() {
   // Apply overrides to the initial iframe
   const frame = document.getElementById('rota-frame');
   const initFile = frame.src.split('/').pop().split('?')[0];
-  frame.onload = () => applyOverrides(frame, initFile);
+  frame.onload = () => { applyOverrides(frame, initFile); syncDarkToFrame(frame); };
   // If already loaded (cached), trigger manually
   if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
     applyOverrides(frame, initFile);
+    syncDarkToFrame(frame);
   }
 }
 
