@@ -215,8 +215,20 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 [data-dark] .msg.ai .msg-bubble      { background: #141426; color: #d0d0e8; border-color: #2a2a40; }
 [data-dark] .msg.ai .msg-bubble code { background: #1e1e3a; }
 [data-dark] .msg.ai .msg-bubble pre  { background: #0f0f1a; border-color: #2a2a40; }
-[data-dark] .msg.ai .msg-bubble th   { background: #1e1e3a; }
-[data-dark] .msg.ai .msg-bubble td   { border-color: #2a2a40; }
+[data-dark] .msg.ai .msg-bubble th   { background: #1e1e3a; color: #d0d0e8; }
+[data-dark] .msg.ai .msg-bubble td   { border-color: #2a2a40; color: #d0d0e8; }
+[data-dark] .msg.ai .msg-bubble tr   { background: #141426; }
+[data-dark] .msg.ai .msg-bubble tr:nth-child(even) { background: #1a1a2e; }
+[data-dark] .msg.ai .msg-bubble blockquote { color: #a0a0c0; }
+[data-dark] .msg.ai .msg-bubble a    { color: #9999ee; }
+[data-dark] .msg.ai .msg-bubble strong { color: #e0e0f0; }
+
+/* Dark scrollbars */
+[data-dark] * { scrollbar-color: #2a2a40 #0f0f1a; }
+[data-dark] *::-webkit-scrollbar { width: 10px; height: 10px; }
+[data-dark] *::-webkit-scrollbar-track { background: #0f0f1a; }
+[data-dark] *::-webkit-scrollbar-thumb { background: #2a2a40; border-radius: 5px; }
+[data-dark] *::-webkit-scrollbar-thumb:hover { background: #3a3a55; }
 [data-dark] .chat-input-wrap         { background: #1a1a2e; border-color: #2a2a40; }
 [data-dark] textarea[id="chat-input"] { background: #141426; border-color: #2a2a40; color: #d0d0e8; }
 [data-dark] textarea[id="chat-input"]::placeholder { color: #44445a; }
