@@ -96,6 +96,29 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 .msg.user .msg-avatar { background: #667eea; color: white; }
 .msg.ai .msg-avatar { background: #f0f0ff; }
 .msg-bubble { padding: 11px 15px; border-radius: 14px; font-size: 13.5px; line-height: 1.6; word-break: break-word; }
+.chat-title-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 18px; border-bottom: 1px solid #e8ebff;
+  background: #fafbff; flex-shrink: 0;
+}
+.ctb-icon { font-size: 14px; opacity: 0.7; flex-shrink: 0; }
+#chat-title-input {
+  flex: 1; border: none; background: transparent; outline: none;
+  font-size: 13.5px; font-weight: 600; color: #1a1a2e;
+  font-family: inherit; padding: 4px 6px; border-radius: 6px;
+  transition: background 0.15s;
+}
+#chat-title-input::placeholder { color: #aab; font-weight: 400; font-style: italic; }
+#chat-title-input:hover { background: #f0f0ff; }
+#chat-title-input:focus { background: white; box-shadow: 0 0 0 2px #667eea; }
+.ctb-hint { font-size: 10.5px; color: #aab; flex-shrink: 0; min-width: 60px; text-align: right; }
+[data-dark] .chat-title-bar { background: #141426; border-bottom-color: #2a2a40; }
+[data-dark] #chat-title-input { color: #d0d0e8; }
+[data-dark] #chat-title-input::placeholder { color: #555570; }
+[data-dark] #chat-title-input:hover { background: #1e1e3a; }
+[data-dark] #chat-title-input:focus { background: #0f0f1a; }
+[data-dark] .ctb-hint { color: #555570; }
+
 .draft-badge {
   display: inline-block; align-self: flex-start;
   background: linear-gradient(135deg, #667eea, #764ba2);
@@ -344,6 +367,17 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
       <button class="clear-btn" onclick="startNewChat()">＋ New Chat</button>
     </div>
 
+    <div class="chat-title-bar">
+      <span class="ctb-icon">💬</span>
+      <input type="text" id="chat-title-input"
+             placeholder="Untitled chat — click to name this chat"
+             maxlength="60"
+             oninput="onChatTitleInput()"
+             onblur="onChatTitleBlur()"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
+      <span class="ctb-hint" id="ctb-hint"></span>
+    </div>
+
     <div class="chat-messages" id="chat-messages">
       <div class="chat-empty" id="empty-state">
         <div class="empty-icon">📅</div>
@@ -398,6 +432,7 @@ let lastRotaJson   = null;
 let currentWeekStart = '';   // 'YYYY-MM-DD' Monday of loaded week
 let weekContextSnapshot = null;  // { week_label, week_start, week_end, week_num, staff:[], days:[] }
 let drafts = [];             // [{ id, draft_number, draft_text, created_at, status }]
+let customChatTitle = '';    // user-set chat title (overrides auto-derived)
 
 // ── Session persistence (localStorage) ───────────────────────────────────
 const SESSION_KEY = 'bingsoo_chat_session_v1';
@@ -411,6 +446,7 @@ function saveSession() {
       weekStart: document.getElementById('week-select')?.value || '',
       currentWeekStart,
       weekContextSnapshot,
+      customChatTitle,
       savedAt: Date.now(),
     }));
   } catch {}
@@ -464,6 +500,7 @@ function restoreSession() {
   currentWeekLabel     = s.weekLabel || '';
   currentWeekStart     = s.currentWeekStart || '';
   weekContextSnapshot  = s.weekContextSnapshot || null;
+  setChatTitleInputValue(s.customChatTitle || '');
   if (currentWeekStart) loadDrafts();  // pull drafts for restored week
   // Re-link to existing conversation entry if possible
   const convs = getConversations();
@@ -920,15 +957,17 @@ function saveConvList(list) {
 
 // Auto-save current chat into history list after every message
 function autoSaveToHistory() {
-  if (!conversationHistory.length) return;
+  if (!conversationHistory.length && !customChatTitle.trim()) return;
   const firstUser = conversationHistory.find(m => m.role === 'user');
-  const title = firstUser ? firstUser.content.slice(0, 50) : 'Chat';
+  const autoTitle = firstUser ? firstUser.content.slice(0, 50) : 'Untitled chat';
+  const title = (customChatTitle.trim() || autoTitle);
 
   if (!currentConvId) currentConvId = genId();
 
   const entry = {
     id: currentConvId,
     title,
+    customTitle: customChatTitle.trim(),  // remember user-set title across loads
     weekLabel: currentWeekLabel,
     savedAt: Date.now(),
     messages: conversationHistory,
@@ -942,13 +981,38 @@ function autoSaveToHistory() {
   renderHistory();
 }
 
+// ── Chat title (editable) ────────────────────────────────────────────────
+function onChatTitleInput() {
+  const el = document.getElementById('chat-title-input');
+  if (!el) return;
+  customChatTitle = el.value;
+  const hint = document.getElementById('ctb-hint');
+  if (hint) hint.textContent = 'editing…';
+}
+function onChatTitleBlur() {
+  customChatTitle = (document.getElementById('chat-title-input')?.value || '').trim();
+  const hint = document.getElementById('ctb-hint');
+  if (hint) { hint.textContent = customChatTitle ? '✓ saved' : ''; setTimeout(() => { hint.textContent = ''; }, 1500); }
+  autoSaveToHistory();
+  saveSession();
+}
+function setChatTitleInputValue(val) {
+  customChatTitle = val || '';
+  const el = document.getElementById('chat-title-input');
+  if (el) el.value = customChatTitle;
+}
+
 // Start a brand-new chat (archives current one first)
 function startNewChat() {
   autoSaveToHistory();        // save current before clearing
   currentConvId   = null;
   currentWeekLabel = '';
+  customChatTitle = '';
+  setChatTitleInputValue('');
   clearChat(true);
   renderHistory();
+  // Focus the title input so user can name the chat right away
+  setTimeout(() => document.getElementById('chat-title-input')?.focus(), 50);
 }
 
 // Load a saved conversation
@@ -961,6 +1025,7 @@ function loadConversation(id) {
   conversationHistory = conv.messages || [];
   systemPrompt     = conv.systemPrompt || '';
   contextLoaded    = !!systemPrompt;
+  setChatTitleInputValue(conv.customTitle || '');
 
   // Re-render messages
   const msgs = document.getElementById('chat-messages');
