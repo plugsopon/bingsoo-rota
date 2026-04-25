@@ -96,6 +96,37 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
 .msg.user .msg-avatar { background: #667eea; color: white; }
 .msg.ai .msg-avatar { background: #f0f0ff; }
 .msg-bubble { padding: 11px 15px; border-radius: 14px; font-size: 13.5px; line-height: 1.6; word-break: break-word; }
+.draft-badge {
+  display: inline-block; align-self: flex-start;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white; font-size: 10.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: 10px; letter-spacing: 0.4px;
+  box-shadow: 0 1px 4px rgba(102,126,234,0.35);
+}
+.draft-row {
+  display: flex; align-items: center; gap: 8px;
+  background: #f8f9ff; border: 1px solid #e8ebff; border-radius: 9px;
+  padding: 7px 10px; font-size: 12.5px;
+}
+.draft-row .dr-label { font-weight: 700; color: #1a1a2e; flex-shrink: 0; }
+.draft-row .dr-time  { color: #888; font-size: 11px; flex: 1; }
+.draft-row .dr-pub   {
+  background: #10b981; color: white; border: none; border-radius: 7px;
+  padding: 5px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
+.draft-row .dr-pub:hover:not(:disabled) { background: #0e9e72; }
+.draft-row .dr-pub:disabled { background: #a8d8c4; cursor: not-allowed; }
+.draft-row .dr-view {
+  background: none; border: none; color: #667eea;
+  font-size: 12px; cursor: pointer; padding: 4px 6px;
+}
+.draft-row .dr-view:hover { color: #4a5fc1; }
+.draft-row.is-published { border-color: #bbf7d0; background: #f0fdf4; }
+[data-dark] .draft-row { background: #141426; border-color: #2a2a40; }
+[data-dark] .draft-row .dr-label { color: #d0d0e8; }
+[data-dark] .draft-row .dr-time { color: #8888aa; }
+[data-dark] .draft-row.is-published { background: #0f2a1f; border-color: #1f5236; }
 .msg.user .msg-bubble { background: #667eea; color: white; border-bottom-right-radius: 4px; }
 .msg.ai .msg-bubble { background: #f8f9ff; color: #1a1a2e; border-bottom-left-radius: 4px; border: 1px solid #e8ebff; }
 
@@ -282,16 +313,16 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; height: 100vh; 
       <div class="hist-list" id="hist-list"></div>
     </div>
 
-    <div class="panel-card" id="publish-panel">
+    <div class="panel-card" id="drafts-panel" style="display:none">
       <h3>📤 Publish ROTA</h3>
-      <p style="font-size:11px;color:#888;margin-bottom:8px">After AI generates a ROTA, click to publish it live</p>
-      <button class="load-btn" style="background:#10b981" onclick="scanAndPublish()">📤 Publish to Website</button>
+      <p style="font-size:11px;color:#888;margin-bottom:10px" id="drafts-help">Pick a draft to publish to the website</p>
+      <div id="drafts-list" style="display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto"></div>
     </div>
 
     <div class="panel-card">
       <h3>⚡ Quick Prompts</h3>
-      <button class="quick-btn" onclick="quickPrompt('Generate a complete weekly ROTA for this week. Keep prose brief — just a short summary table per day. Skip per-shift reasoning. End with the rota_json block (all 9 staff × 7 days) so the Publish button appears.')">📋 Generate ROTA draft</button>
-      <button class="quick-btn" onclick="quickPrompt('Output the rota_json block for the ROTA you just generated, so I can publish it to the website.')">📤 Get Publish JSON</button>
+      <button class="quick-btn" onclick="quickPrompt('Generate a complete weekly ROTA draft for this week as a clean markdown table (Staff × 7 days). Keep prose brief — short summary only, no per-shift reasoning, no JSON.')">📋 Generate ROTA draft</button>
+      <button class="quick-btn" onclick="quickPrompt('Generate an alternative ROTA draft for this week — try a different distribution (e.g. swap weekend leads, balance hours differently). Markdown table only, no JSON.')">🔀 Generate alternative draft</button>
       <button class="quick-btn" onclick="quickPrompt('Who is available each day this week? Give me a day-by-day breakdown showing who is available in the morning and who is available in the evening.')">🌅 Daily availability breakdown</button>
       <button class="quick-btn" onclick="quickPrompt('Are there any days where we might be understaffed this week? Flag any coverage gaps or days with too few staff.')">⚠️ Check coverage gaps</button>
       <button class="quick-btn" onclick="quickPrompt('Show me each staff member\'s total available hours this week. Compare against their contract hours and flag anyone who is under or over.')">⏱ Hours vs contract summary</button>
@@ -364,6 +395,9 @@ let conversationHistory = [];
 let contextLoaded = false;
 let systemPrompt   = '';
 let lastRotaJson   = null;
+let currentWeekStart = '';   // 'YYYY-MM-DD' Monday of loaded week
+let weekContextSnapshot = null;  // { week_label, week_start, week_end, week_num, staff:[], days:[] }
+let drafts = [];             // [{ id, draft_number, draft_text, created_at, status }]
 
 // ── Session persistence (localStorage) ───────────────────────────────────
 const SESSION_KEY = 'bingsoo_chat_session_v1';
@@ -375,6 +409,8 @@ function saveSession() {
       systemPrompt,
       contextLoaded,
       weekStart: document.getElementById('week-select')?.value || '',
+      currentWeekStart,
+      weekContextSnapshot,
       savedAt: Date.now(),
     }));
   } catch {}
@@ -426,6 +462,9 @@ function restoreSession() {
   systemPrompt         = s.systemPrompt  || '';
   contextLoaded        = s.contextLoaded || false;
   currentWeekLabel     = s.weekLabel || '';
+  currentWeekStart     = s.currentWeekStart || '';
+  weekContextSnapshot  = s.weekContextSnapshot || null;
+  if (currentWeekStart) loadDrafts();  // pull drafts for restored week
   // Re-link to existing conversation entry if possible
   const convs = getConversations();
   if (convs.length > 0 && !currentConvId) currentConvId = convs[0].id;
@@ -506,6 +545,16 @@ async function loadContext() {
     const dates   = DAYS.map((_, i) => fmtDate(new Date(d.getTime() + i*86400000)));
     const weekLabel = `${fmtShort(d)} – ${fmtShort(new Date(d.getTime() + 6*86400000))}`;
     currentWeekLabel = weekLabel;
+    currentWeekStart = weekStart;
+
+    // ISO week number
+    function isoWeek(date) {
+      const t = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dn = t.getUTCDay() || 7;
+      t.setUTCDate(t.getUTCDate() + 4 - dn);
+      const yStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+      return Math.ceil(((t - yStart) / 86400000 + 1) / 7);
+    }
 
     // Also load sales: last 12 weeks for historical patterns
     const salesLookback = fmtDate(new Date(d.getTime() - 84*86400000)); // 12 weeks back
@@ -602,38 +651,10 @@ Use markdown tables like:
 
 Show times as HH:MM-HH:MM format. Always explain your reasoning and flag potential issues.
 
-## IMPORTANT: Always end a full ROTA with a JSON block
-When you provide a complete weekly ROTA (not just a partial suggestion), you MUST end your response with a machine-readable block exactly like this (no extra text after it):
+## IMPORTANT: Drafts only — NO JSON
+Output the ROTA as a clean markdown table only (the format above). Do NOT include any JSON, code blocks, or rota_json tag. The user will pick a draft and publish it separately — JSON is generated automatically at publish time, you don't need to write it.
 
-<rota_json>
-{
-  "week_label": "04 May – 10 May 2026",
-  "week_start": "2026-05-04",
-  "week_end": "2026-05-10",
-  "week_num": 19,
-  "staff": [
-    {"name": "Som", "role": "Manager", "contract_hours": 40}
-  ],
-  "days": [
-    {"date": "2026-05-04", "day": "Monday", "demand": "LOW", "est_revenue": "£1,100", "weather": "☀️", "temp": "18°C", "rain": "0mm"}
-  ],
-  "shifts": {
-    "Som": {
-      "2026-05-04": {"start": "07:00", "end": "14:00", "break_hrs": 0.5, "break_start": "10:30", "break_end": "11:00"},
-      "2026-05-05": "off"
-    }
-  }
-}
-</rota_json>
-
-Rules for the JSON:
-- Every staff member must have an entry for ALL 7 days
-- "off" (string) means the person doesn't work that day
-- break_hrs: 0.5 for 30-min break, 1 for 1-hour break, 0 for no break
-- break_start/break_end: midpoint of shift (e.g. if shift 07:00-14:00, break at 10:30-11:00)
-- demand: "LOW", "MEDIUM", or "HIGH"
-- week_num: ISO week number
-- Include ALL staff (even those fully off that week)`;
+Each complete weekly ROTA you produce will be saved automatically as "Draft N" so the user can compare versions and publish whichever they like.`;
 
     // ── Fetch context sources ──────────────────────────────────────────────
     status.textContent = 'Loading context sources…';
@@ -643,6 +664,26 @@ Rules for the JSON:
     systemPrompt  = prompt;
     contextLoaded = true;
     conversationHistory = [];
+
+    // ── Save context snapshot for later use by /api/rota-finalize ───────
+    weekContextSnapshot = {
+      week_label: weekLabel,
+      week_start: weekStart,
+      week_end:   weekEnd,
+      week_num:   isoWeek(d),
+      staff: allStaff.map(s => ({
+        name: s.name,
+        role: s.role,
+        contract_hours: s.contract_hours || null
+      })),
+      days: dates.map((date, i) => ({
+        date,
+        day: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i]
+      }))
+    };
+
+    // ── Load existing drafts for this week ──────────────────────────────
+    await loadDrafts();
 
     // ── Staff mini list ────────────────────────────────────────────────
     const submitted = allStaff.filter(s => availMap[s.id] && Object.keys(availMap[s.id]).length > 0).length;
@@ -702,7 +743,7 @@ function clearChat(addEmpty = true) {
   }
 }
 
-function appendMsg(role, content) {
+function appendMsg(role, content, opts = {}) {
   const msgs = document.getElementById('chat-messages');
   const empty = document.getElementById('empty-state');
   if (empty) empty.remove();
@@ -711,55 +752,45 @@ function appendMsg(role, content) {
   const div = document.createElement('div');
   div.className = `msg ${isUser ? 'user' : 'ai'}`;
 
-  // Extract rota_json from content — supports <rota_json> tags OR ```json code blocks
-  function extractRotaJson(raw) {
-    // Try <rota_json>...</rota_json> first
-    const tagMatch = raw.match(/<rota_json>([\s\S]*?)<\/rota_json>/);
-    if (tagMatch) return tagMatch[1].trim();
-    // Try ```json ... ``` block that contains "week_label"
-    const codeMatch = raw.match(/```(?:json)?\s*(\{[\s\S]*?"week_label"[\s\S]*?\})\s*```/);
-    if (codeMatch) return codeMatch[1].trim();
-    // Try bare JSON object containing "week_label" and "shifts"
-    const bareMatch = raw.match(/(\{[\s\S]*?"week_label"[\s\S]*?"shifts"[\s\S]*?\})\s*$/);
-    if (bareMatch) return bareMatch[1].trim();
-    return null;
-  }
-
-  const rotaRaw = isUser ? null : extractRotaJson(content);
-
-  // Strip rota_json block from display, replace with friendly notice
+  // Strip any stray JSON the AI might still emit (defensive)
   const displayContent = isUser ? content : content
-    .replace(/<rota_json>[\s\S]*?<\/rota_json>/g, '\n*[ROTA data ready — click Publish button below]*\n')
-    .replace(/```(?:json)?\s*\{[\s\S]*?"week_label"[\s\S]*?\}\s*```/g, '\n*[ROTA data ready — click Publish button below]*\n');
+    .replace(/<rota_json>[\s\S]*?<\/rota_json>/g, '')
+    .replace(/```(?:json)?\s*\{[\s\S]*?"week_label"[\s\S]*?\}\s*```/g, '')
+    .trim();
 
   const rendered = isUser
     ? escHtml(displayContent).replace(/\n/g, '<br>')
     : (typeof marked !== 'undefined' ? marked.parse(displayContent) : escHtml(displayContent));
 
+  // Optional draft badge (e.g. "Draft 3") shown on AI messages
+  const badge = (!isUser && opts.draftNumber)
+    ? `<div class="draft-badge">📋 Draft ${opts.draftNumber}</div>`
+    : '';
+
   div.innerHTML = `
     <div class="msg-avatar">${isUser ? '👤' : '🤖'}</div>
     <div class="msg-content">
+      ${badge}
       <div class="msg-bubble">${rendered}</div>
     </div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 
-  // Show publish panel if any rota JSON found in this message
-  if (role === 'ai') {
-    const bubble = div.querySelector('.msg-bubble');
-    const rawText = bubble ? (bubble.innerText || bubble.textContent) : content;
-    const jsonStr = extractRotaJsonRobust(content) || extractRotaJsonRobust(rawText);
-    if (jsonStr) {
-      try {
-        JSON.parse(jsonStr); // validate
-        document.getElementById('publish-panel').style.display = 'block';
-      } catch(e) {}
-    }
-  }
-
   saveSession();
   autoSaveToHistory();
   return div;
+}
+
+// Heuristic: does an AI message look like a complete weekly ROTA?
+// Look for a markdown table with day-of-week headers across most days.
+function looksLikeRotaDraft(text) {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  // Need a table row (pipes) AND most weekday names appearing as columns
+  if (!/\|.*\|.*\|/.test(text)) return false;
+  const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const hits = days.filter(d => new RegExp(`\\|\\s*${d}`, 'i').test(text)).length;
+  return hits >= 5;
 }
 
 function escHtml(s) {
@@ -838,7 +869,12 @@ async function sendMessage() {
       conversationHistory.pop();
     } else {
       const reply = data.content?.[0]?.text || '(No response)';
-      appendMsg('ai', reply);
+      // If the AI produced a complete weekly ROTA, save it as a new draft
+      let draftNumber = null;
+      if (weekContextSnapshot && looksLikeRotaDraft(reply)) {
+        draftNumber = await saveDraft(reply);
+      }
+      appendMsg('ai', reply, { draftNumber });
       conversationHistory.push({ role: 'assistant', content: reply });
     }
 
@@ -1111,11 +1147,137 @@ window.addEventListener('message', e => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════
-// ── Publish ROTA ──────────────────────────────────────────────────────────
+// ── Drafts + Publish ──────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 let publishRotaData = null;
 
-// ── Robust JSON extractor using bracket counting (handles nested objects) ──
+// Save a new draft to Supabase. Returns the draft_number assigned.
+async function saveDraft(draftText) {
+  if (!weekContextSnapshot) return null;
+  // Determine next draft number for this week
+  const nextNum = (drafts.reduce((m, d) => Math.max(m, d.draft_number || 0), 0)) + 1;
+  const { data, error } = await sb.from('rota_drafts').insert({
+    week_start: currentWeekStart,
+    draft_number: nextNum,
+    draft_text: draftText,
+    context_snapshot: weekContextSnapshot,
+    status: 'draft'
+  }).select().single();
+  if (error) {
+    console.warn('Failed to save draft:', error.message);
+    return null;
+  }
+  drafts.unshift(data);
+  renderDrafts();
+  return nextNum;
+}
+
+async function loadDrafts() {
+  if (!currentWeekStart) return;
+  const { data, error } = await sb.from('rota_drafts')
+    .select('*')
+    .eq('week_start', currentWeekStart)
+    .order('draft_number', { ascending: false });
+  if (error) { console.warn('loadDrafts error:', error.message); return; }
+  drafts = data || [];
+  renderDrafts();
+}
+
+function renderDrafts() {
+  const panel = document.getElementById('drafts-panel');
+  const list  = document.getElementById('drafts-list');
+  const help  = document.getElementById('drafts-help');
+  if (!panel || !list) return;
+
+  if (drafts.length === 0) {
+    panel.style.display = 'block';
+    help.textContent = 'No drafts yet. Ask the AI to generate a ROTA — each one is saved as Draft 1, 2, 3…';
+    list.innerHTML = '';
+    return;
+  }
+  panel.style.display = 'block';
+  help.textContent = `${drafts.length} draft${drafts.length>1?'s':''} for this week. Click Publish on the one you like.`;
+  list.innerHTML = drafts.map(d => {
+    const t = new Date(d.created_at);
+    const time = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isPub = d.status === 'published';
+    return `
+      <div class="draft-row ${isPub ? 'is-published' : ''}">
+        <span class="dr-label">Draft ${d.draft_number}</span>
+        <span class="dr-time">${time}${isPub ? ' · ✓ published' : ''}</span>
+        <button class="dr-view" title="View" onclick="viewDraft('${d.id}')">👁</button>
+        <button class="dr-pub" onclick="publishDraft('${d.id}')" ${isPub ? 'disabled' : ''}>
+          ${isPub ? 'Published' : '📤 Publish'}
+        </button>
+      </div>`;
+  }).join('');
+}
+
+// Scroll to the chat bubble that contains this draft (best effort by text match)
+function viewDraft(id) {
+  const d = drafts.find(x => x.id === id);
+  if (!d) return;
+  // Find a bubble whose text starts with the same first 80 chars of draft text
+  const needle = d.draft_text.replace(/\s+/g, ' ').trim().slice(0, 80);
+  const bubbles = document.querySelectorAll('.msg.ai .msg-bubble');
+  for (const b of bubbles) {
+    const txt = (b.innerText || b.textContent || '').replace(/\s+/g, ' ').trim();
+    if (txt.startsWith(needle.slice(0, 40))) {
+      b.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      b.style.transition = 'box-shadow 0.4s';
+      b.style.boxShadow = '0 0 0 3px #667eea';
+      setTimeout(() => { b.style.boxShadow = ''; }, 1500);
+      return;
+    }
+  }
+  // Fallback: alert with text
+  alert(`Draft ${d.draft_number}:\n\n${d.draft_text.slice(0, 800)}${d.draft_text.length > 800 ? '…' : ''}`);
+}
+
+// Convert draft → JSON via Haiku, then open the existing publish modal
+async function publishDraft(id) {
+  const d = drafts.find(x => x.id === id);
+  if (!d) return;
+
+  const row = document.querySelector(`.draft-row [onclick*="${id}"]`);
+  // Find the row's button to show progress
+  let btn = null;
+  document.querySelectorAll('.dr-pub').forEach(b => {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(id)) btn = b;
+  });
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Building JSON…'; }
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { alert('Not logged in'); return; }
+
+    const res = await fetch('/api/rota-finalize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({
+        draftText: d.draft_text,
+        ctx: d.context_snapshot
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.rotaJson) {
+      alert('❌ Could not finalize draft: ' + (data.error || `HTTP ${res.status}`));
+      if (btn) { btn.disabled = false; btn.textContent = '📤 Publish'; }
+      return;
+    }
+    // Stash draft id so confirmPublish can mark it published afterwards
+    publishingDraftId = id;
+    openPublishModal(data.rotaJson);
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Publish'; }
+  } catch (err) {
+    alert('❌ Network error: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Publish'; }
+  }
+}
+
+let publishingDraftId = null;
+
+// ── Robust JSON extractor — kept around in case older chats still contain inline JSON
 function extractRotaJsonRobust(text) {
   // 1. Try <rota_json> tag
   const tagIdx = text.indexOf('<rota_json>');
@@ -1148,35 +1310,6 @@ function extractRotaJsonRobust(text) {
     i++;
   }
   return null;
-}
-
-// ── Scan all AI messages in current chat and find rota JSON ──
-function scanAndPublish() {
-  const bubbles = document.querySelectorAll('.msg.ai .msg-bubble');
-  let found = null;
-  // Search from latest message backwards
-  for (let i = bubbles.length - 1; i >= 0; i--) {
-    const text = bubbles[i].innerText || bubbles[i].textContent;
-    const raw = extractRotaJsonRobust(text);
-    if (raw) {
-      try { found = JSON.parse(raw); break; } catch(e) {}
-    }
-  }
-  // Also check stored conversationHistory (has original content with tags)
-  if (!found) {
-    for (let i = conversationHistory.length - 1; i >= 0; i--) {
-      if (conversationHistory[i].role !== 'assistant') continue;
-      const raw = extractRotaJsonRobust(conversationHistory[i].content);
-      if (raw) {
-        try { found = JSON.parse(raw); break; } catch(e) {}
-      }
-    }
-  }
-  if (!found) {
-    alert('No ROTA JSON found in this chat. Ask the AI to generate a full ROTA first, or click "Get Publish JSON".');
-    return;
-  }
-  openPublishModal(found);
 }
 
 function openPublishModal(rotaData) {
@@ -1256,6 +1389,18 @@ async function confirmPublish() {
       status.textContent = msg;
       status.style.whiteSpace = 'pre-line';
       btn.textContent = '✅ Published!';
+      // Mark the source draft as published
+      if (publishingDraftId) {
+        try {
+          await sb.from('rota_drafts')
+            .update({ status: 'published', updated_at: new Date().toISOString() })
+            .eq('id', publishingDraftId);
+          const d = drafts.find(x => x.id === publishingDraftId);
+          if (d) d.status = 'published';
+          renderDrafts();
+        } catch (_) {}
+        publishingDraftId = null;
+      }
     }
   } catch(err) {
     status.textContent = `❌ Network error: ${err.message}`;
