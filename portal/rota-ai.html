@@ -513,20 +513,15 @@ function restoreSession() {
     if (sel) { for (const opt of sel.options) { if (opt.value === s.weekStart) { opt.selected = true; break; } } }
   }
 
-  // Re-render all messages
+  // Re-render all messages (preserve draft badges)
   const msgs = document.getElementById('chat-messages');
   msgs.innerHTML = '';
-  conversationHistory.forEach(m => {
-    const isUser = m.role === 'user';
-    const div = document.createElement('div');
-    div.className = `msg ${isUser ? 'user' : 'ai'}`;
-    const rendered = isUser
-      ? escHtml(m.content).replace(/\n/g, '<br>')
-      : (typeof marked !== 'undefined' ? marked.parse(m.content) : escHtml(m.content));
-    div.innerHTML = `
-      <div class="msg-avatar">${isUser ? '👤' : '🤖'}</div>
-      <div class="msg-content"><div class="msg-bubble">${rendered}</div></div>`;
-    msgs.appendChild(div);
+  // Temporarily detach autoSave to avoid 1 save per restored message
+  const histSnap = conversationHistory.slice();
+  conversationHistory = [];
+  histSnap.forEach(m => {
+    conversationHistory.push(m);
+    appendMsg(m.role === 'user' ? 'user' : 'ai', m.content, { draftNumber: m.draftNumber });
   });
   msgs.scrollTop = msgs.scrollHeight;
   renderHistory();
@@ -866,8 +861,10 @@ async function sendMessage() {
   input.value = ''; input.style.height = 'auto';
   sendBtn.disabled = true;
 
-  appendMsg('user', text);
+  // Push to history BEFORE rendering so the autoSave inside appendMsg
+  // captures this message (otherwise the last message gets lost on navigate).
   conversationHistory.push({ role: 'user', content: text });
+  appendMsg('user', text);
   showTyping();
 
   try {
@@ -913,8 +910,14 @@ async function sendMessage() {
       if (weekContextSnapshot && looksLikeRotaDraft(reply)) {
         draftNumber = await saveDraft(reply);
       }
+      // Push to history BEFORE rendering so the autoSave persists this reply
+      // (and remember the draft number on the message itself for re-render)
+      conversationHistory.push({
+        role: 'assistant',
+        content: reply,
+        ...(draftNumber ? { draftNumber } : {})
+      });
       appendMsg('ai', reply, { draftNumber });
-      conversationHistory.push({ role: 'assistant', content: reply });
     }
 
   } catch (err) {
@@ -1026,6 +1029,9 @@ function loadConversation(id) {
   const conv = getConversations().find(c => c.id === id);
   if (!conv) return;
 
+  // Save the chat we're leaving (if any) before switching
+  autoSaveToHistory();
+
   currentConvId    = id;
   currentWeekLabel = conv.weekLabel || '';
   conversationHistory = conv.messages || [];
@@ -1034,19 +1040,14 @@ function loadConversation(id) {
   setChatTitleInputValue(conv.customTitle || '');
   loadDrafts();   // pull drafts that belong to this chat
 
-  // Re-render messages
+  // Re-render messages (preserve draft badges via per-message draftNumber)
   const msgs = document.getElementById('chat-messages');
   msgs.innerHTML = '';
-  conversationHistory.forEach(m => {
-    const isUser = m.role === 'user';
-    const div = document.createElement('div');
-    div.className = `msg ${isUser ? 'user' : 'ai'}`;
-    const rendered = isUser
-      ? escHtml(m.content).replace(/\n/g, '<br>')
-      : (typeof marked !== 'undefined' ? marked.parse(m.content) : escHtml(m.content));
-    div.innerHTML = `<div class="msg-avatar">${isUser ? '👤' : '🤖'}</div>
-      <div class="msg-content"><div class="msg-bubble">${rendered}</div></div>`;
-    msgs.appendChild(div);
+  const histSnap = conversationHistory.slice();
+  conversationHistory = [];
+  histSnap.forEach(m => {
+    conversationHistory.push(m);
+    appendMsg(m.role === 'user' ? 'user' : 'ai', m.content, { draftNumber: m.draftNumber });
   });
   msgs.scrollTop = msgs.scrollHeight;
 
