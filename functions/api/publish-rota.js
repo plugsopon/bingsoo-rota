@@ -429,6 +429,20 @@ async function writeShiftsToSupabase(rota, userToken) {
     throw new Error(`delete failed ${delRes.status}: ${body}`);
   }
 
+  // 2b. Wipe any manual overrides for this week — a fresh publish
+  //     supersedes prior last-minute Edit ROTA tweaks, so the Edit ROTA
+  //     page should reflect the published times cleanly with no leftover
+  //     amber overrides.
+  const delOvr = await fetch(
+    `${SUPABASE_URL}/rest/v1/rota_overrides?date=gte.${week_start}&date=lte.${week_end}`,
+    { method: 'DELETE', headers }
+  );
+  if (!delOvr.ok && delOvr.status !== 404) {
+    const body = await delOvr.text().catch(() => '');
+    // Non-fatal — log but don't block publish (e.g. table might not exist yet)
+    console.warn(`override delete failed ${delOvr.status}: ${body}`);
+  }
+
   // 3. Build insert payload from shifts map
   const rows = [];
   for (const s of staff) {
