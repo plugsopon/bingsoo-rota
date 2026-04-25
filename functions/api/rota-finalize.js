@@ -50,7 +50,9 @@ export async function onRequestPost(context) {
 
     // 4. Build a strict, minimal prompt for Haiku
     const staffList = ctx.staff.map(s => `- ${s.name} (${s.role || 'Staff'})`).join('\n');
-    const dayList   = ctx.days.map(d => `- ${d.date} (${d.day})`).join('\n');
+    const dayList   = ctx.days.map(d =>
+      `- ${d.date} (${d.day})${d.est_revenue ? ` — est_revenue: ${d.est_revenue}` : ''}`
+    ).join('\n');
 
     const system = `You convert a ROTA draft into strict JSON. Output ONLY a single JSON object inside <rota_json>...</rota_json> tags. No prose, no explanation, no markdown.`;
 
@@ -97,8 +99,13 @@ RULES:
 - Use "off" (string) for non-working days
 - break_hrs: 0.5 = 30min, 1 = 1h, 0 = none
 - break_start/break_end: roughly midpoint of the shift
-- "demand": "LOW" | "MEDIUM" | "HIGH" — infer from draft, default MEDIUM
-- If the draft does not state weather / revenue, use "—" placeholders
+- For each day, copy "est_revenue" from the DAYS list above into the JSON exactly as given (e.g. "£1,234"). If a day has no value, use "—".
+- "demand": infer from est_revenue:
+    < £1,500           → "LOW"
+    £1,500 – £2,500    → "MEDIUM"
+    > £2,500           → "HIGH"
+  If est_revenue is "—" or missing, default to "MEDIUM".
+- If weather / temp / rain are not stated in the draft, use "—" placeholders.
 - Times in HH:MM 24h format
 - Output ONLY the <rota_json>...</rota_json> block. No other text.`;
 

@@ -699,6 +699,8 @@ Each complete weekly ROTA you produce will be saved automatically as "Draft N" s
     conversationHistory = [];
 
     // ── Save context snapshot for later use by /api/rota-finalize ───────
+    // dowAvg is indexed Sun=0..Sat=6; our `dates` are Mon..Sun.
+    const MON_SUN_IDX = [1, 2, 3, 4, 5, 6, 0];
     weekContextSnapshot = {
       week_label: weekLabel,
       week_start: weekStart,
@@ -709,10 +711,18 @@ Each complete weekly ROTA you produce will be saved automatically as "Draft N" s
         role: s.role,
         contract_hours: s.contract_hours || null
       })),
-      days: dates.map((date, i) => ({
-        date,
-        day: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i]
-      }))
+      days: dates.map((date, i) => {
+        const dowIdx = MON_SUN_IDX[i];
+        const avg = dowAvg[dowIdx];
+        const actual = thisWeekSales[date];
+        return {
+          date,
+          day: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i],
+          est_revenue: actual != null
+            ? `£${actual.toLocaleString()}`
+            : (avg != null ? `£${avg.toLocaleString()}` : '—')
+        };
+      })
     };
 
     // Drafts are per-chat now — they'll appear as the AI generates them
