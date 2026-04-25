@@ -1005,11 +1005,15 @@ function setChatTitleInputValue(val) {
 // Start a brand-new chat (archives current one first)
 function startNewChat() {
   autoSaveToHistory();        // save current before clearing
-  currentConvId   = null;
-  currentWeekLabel = '';
-  customChatTitle = '';
+  currentConvId       = null;
+  currentWeekLabel    = '';
+  currentWeekStart    = '';
+  weekContextSnapshot = null;
+  drafts              = [];
+  customChatTitle     = '';
   setChatTitleInputValue('');
   clearChat(true);
+  renderDrafts();             // hides the Publish panel since no drafts
   renderHistory();
   // Focus the title input so user can name the chat right away
   setTimeout(() => document.getElementById('chat-title-input')?.focus(), 50);
@@ -1254,6 +1258,12 @@ function renderDrafts() {
   const help  = document.getElementById('drafts-help');
   if (!panel || !list) return;
 
+  // Hide entirely when no week is loaded — drafts are per-week
+  if (!currentWeekStart) {
+    panel.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
   if (drafts.length === 0) {
     panel.style.display = 'block';
     help.textContent = 'No drafts yet. Ask the AI to generate a ROTA — each one is saved as Draft 1, 2, 3…';
