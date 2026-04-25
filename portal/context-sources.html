@@ -88,6 +88,21 @@ body { font-family: 'Segoe UI', sans-serif; background: #f5f7ff; min-height: 100
 }
 .src-group.is-open > .src-group-header .collapse-arrow { transform: rotate(90deg); }
 
+/* Drag handle */
+.drag-handle {
+  font-size: 14px; color: #c0c4d0; flex-shrink: 0;
+  width: 14px; text-align: center; cursor: grab;
+  user-select: none; line-height: 1;
+  transition: color 0.15s;
+}
+.drag-handle:hover { color: #667eea; }
+.drag-handle:active { cursor: grabbing; }
+.src-group.is-dragging { opacity: 0.4; }
+.src-group.drop-before { box-shadow: 0 -3px 0 0 #667eea, 0 2px 10px rgba(0,0,0,0.06); }
+.src-group.drop-after  { box-shadow: 0 3px 0 0 #667eea, 0 2px 10px rgba(0,0,0,0.06); }
+[data-dark] .drag-handle { color: #44445a; }
+[data-dark] .drag-handle:hover { color: #9999ee; }
+
 .src-group-icon { font-size: 22px; flex-shrink: 0; }
 .src-group-title-wrap { flex: 1; min-width: 0; }
 .src-group-title {
@@ -335,7 +350,9 @@ async function init() {
 async function loadSources() {
   const container = document.getElementById('cards-container');
   container.innerHTML = `<div style="text-align:center;padding:24px;color:#bbb;font-size:13px">Loading…</div>`;
-  const { data, error } = await sb.from('context_sources').select('*').order('created_at');
+  const { data, error } = await sb.from('context_sources').select('*')
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .order('created_at');
   if (error) {
     container.innerHTML = `<div style="color:#ef4444;padding:12px">Error: ${esc(error.message)}</div>`;
     return;
@@ -396,9 +413,18 @@ function renderCard(s) {
     !isNew && !s.is_enabled ? 'src-off' : ''
   ].filter(Boolean).join(' ');
 
+  const dragAttrs = isNew ? '' :
+    `draggable="true"
+     ondragstart="onDragStart(event,'${esc(id)}')"
+     ondragover="onDragOver(event,'${esc(id)}')"
+     ondragleave="onDragLeave(event,'${esc(id)}')"
+     ondrop="onDrop(event,'${esc(id)}')"
+     ondragend="onDragEnd(event)"`;
+
   return `
-    <div class="${classes}" data-id="${esc(id)}" id="card-${esc(id)}">
+    <div class="${classes}" data-id="${esc(id)}" id="card-${esc(id)}" ${dragAttrs}>
       <div class="src-group-header" onclick="toggleCollapse('${esc(id)}', event)">
+        ${isNew ? '' : `<span class="drag-handle" title="Drag to reorder" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()">⋮⋮</span>`}
         <span class="collapse-arrow">▶</span>
         <span class="src-group-icon">${icon}</span>
         <div class="src-group-title-wrap">
@@ -706,6 +732,79 @@ async function testLink(id) {
     el.textContent = `❌ ${err.message}`;
     el.className = 'test-result show err';
   }
+}
+
+// ── Drag-and-drop reordering ─────────────────────────────────────────────
+let dragSrcId = null;
+
+function onDragStart(e, id) {
+  const s = findSource(id);
+  if (!s || s._draft) { e.preventDefault(); return; }
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', id); } catch {}
+  const el = document.getElementById('card-' + id);
+  if (el) setTimeout(() => el.classList.add('is-dragging'), 0);
+}
+
+function onDragOver(e, id) {
+  if (!dragSrcId || dragSrcId === id) return;
+  const s = findSource(id);
+  if (!s || s._draft) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const el = document.getElementById('card-' + id);
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const before = (e.clientY - r.top) < r.height / 2;
+  el.classList.toggle('drop-before', before);
+  el.classList.toggle('drop-after', !before);
+}
+
+function onDragLeave(e, id) {
+  const el = document.getElementById('card-' + id);
+  if (el) { el.classList.remove('drop-before', 'drop-after'); }
+}
+
+function onDragEnd(e) {
+  document.querySelectorAll('.src-group').forEach(el => {
+    el.classList.remove('is-dragging', 'drop-before', 'drop-after');
+  });
+  dragSrcId = null;
+}
+
+async function onDrop(e, targetId) {
+  e.preventDefault();
+  e.stopPropagation();
+  const srcId = dragSrcId;
+  const targetEl = document.getElementById('card-' + targetId);
+  const before = targetEl?.classList.contains('drop-before');
+  onDragEnd(e);
+  if (!srcId || srcId === targetId) return;
+  const srcIdx = sources.findIndex(s => s.id === srcId);
+  if (srcIdx < 0) return;
+  const [moved] = sources.splice(srcIdx, 1);
+  let targetIdx = sources.findIndex(s => s.id === targetId);
+  if (targetIdx < 0) { sources.splice(srcIdx, 0, moved); return; }
+  sources.splice(before ? targetIdx : targetIdx + 1, 0, moved);
+  renderAll();
+  await persistOrder();
+}
+
+async function persistOrder() {
+  // Assign sort_order = index*10 to all saved sources
+  const updates = sources
+    .filter(s => !s._draft)
+    .map((s, i) => ({ id: s.id, sort_order: i * 10 }));
+  // Update each (parallel). Could use upsert, but simpler:
+  const results = await Promise.all(
+    updates.map(u => sb.from('context_sources')
+      .update({ sort_order: u.sort_order, updated_at: new Date().toISOString() })
+      .eq('id', u.id))
+  );
+  const err = results.find(r => r.error)?.error;
+  if (err) alert('Error saving order: ' + err.message);
+  else updates.forEach(u => { const s = findSource(u.id); if (s) s.sort_order = u.sort_order; });
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────
