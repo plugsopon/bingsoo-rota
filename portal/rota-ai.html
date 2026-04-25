@@ -501,10 +501,11 @@ function restoreSession() {
   currentWeekStart     = s.currentWeekStart || '';
   weekContextSnapshot  = s.weekContextSnapshot || null;
   setChatTitleInputValue(s.customChatTitle || '');
-  if (currentWeekStart) loadDrafts();  // pull drafts for restored week
   // Re-link to existing conversation entry if possible
   const convs = getConversations();
   if (convs.length > 0 && !currentConvId) currentConvId = convs[0].id;
+  // Restored chat may have its own drafts (per chat_id)
+  if (currentConvId) loadDrafts();
 
   // Restore week selector
   if (s.weekStart) {
@@ -719,8 +720,9 @@ Each complete weekly ROTA you produce will be saved automatically as "Draft N" s
       }))
     };
 
-    // ── Load existing drafts for this week ──────────────────────────────
-    await loadDrafts();
+    // Drafts are per-chat now — they'll appear as the AI generates them
+    drafts = [];
+    renderDrafts();
 
     // ── Staff mini list ────────────────────────────────────────────────
     const submitted = allStaff.filter(s => availMap[s.id] && Object.keys(availMap[s.id]).length > 0).length;
@@ -1030,6 +1032,7 @@ function loadConversation(id) {
   systemPrompt     = conv.systemPrompt || '';
   contextLoaded    = !!systemPrompt;
   setChatTitleInputValue(conv.customTitle || '');
+  loadDrafts();   // pull drafts that belong to this chat
 
   // Re-render messages
   const msgs = document.getElementById('chat-messages');
@@ -1221,12 +1224,15 @@ window.addEventListener('message', e => {
 let publishRotaData = null;
 
 // Save a new draft to Supabase. Returns the draft_number assigned.
+// Drafts are scoped to the current chat (chat_id) so each chat has its own.
 async function saveDraft(draftText) {
   if (!weekContextSnapshot) return null;
-  // Determine next draft number for this week
+  if (!currentConvId) currentConvId = genId();   // ensure chat has an id
+  // Determine next draft number for this chat
   const nextNum = (drafts.reduce((m, d) => Math.max(m, d.draft_number || 0), 0)) + 1;
   const { data, error } = await sb.from('rota_drafts').insert({
     week_start: currentWeekStart,
+    chat_id: currentConvId,
     draft_number: nextNum,
     draft_text: draftText,
     context_snapshot: weekContextSnapshot,
@@ -1241,11 +1247,12 @@ async function saveDraft(draftText) {
   return nextNum;
 }
 
+// Load drafts for the current chat only (not the whole week)
 async function loadDrafts() {
-  if (!currentWeekStart) return;
+  if (!currentConvId) { drafts = []; renderDrafts(); return; }
   const { data, error } = await sb.from('rota_drafts')
     .select('*')
-    .eq('week_start', currentWeekStart)
+    .eq('chat_id', currentConvId)
     .order('draft_number', { ascending: false });
   if (error) { console.warn('loadDrafts error:', error.message); return; }
   drafts = data || [];
@@ -1258,15 +1265,15 @@ function renderDrafts() {
   const help  = document.getElementById('drafts-help');
   if (!panel || !list) return;
 
-  // Hide entirely when no week is loaded — drafts are per-week
-  if (!currentWeekStart) {
+  // Hide entirely when no chat is active — drafts are per-chat
+  if (!currentConvId) {
     panel.style.display = 'none';
     list.innerHTML = '';
     return;
   }
   if (drafts.length === 0) {
     panel.style.display = 'block';
-    help.textContent = 'No drafts yet. Ask the AI to generate a ROTA — each one is saved as Draft 1, 2, 3…';
+    help.textContent = 'No drafts yet in this chat. Ask the AI to generate a ROTA — each one is saved as Draft 1, 2, 3…';
     list.innerHTML = '';
     return;
   }

@@ -16,6 +16,13 @@ CREATE TABLE IF NOT EXISTS rota_drafts (
 
 CREATE INDEX IF NOT EXISTS rota_drafts_week_idx ON rota_drafts(week_start, draft_number DESC);
 
+-- ── Per-chat scoping (added later) ─────────────────────────────────────
+-- Drafts are tied to the chat that generated them, not just the week.
+-- Starting a new chat → no old drafts shown. Reopening a saved chat →
+-- its drafts come back.
+ALTER TABLE rota_drafts ADD COLUMN IF NOT EXISTS chat_id text;
+CREATE INDEX IF NOT EXISTS rota_drafts_chat_idx ON rota_drafts(chat_id);
+
 -- ── RLS ───────────────────────────────────────────────────────────────────
 ALTER TABLE rota_drafts ENABLE ROW LEVEL SECURITY;
 
