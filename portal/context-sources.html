@@ -414,8 +414,7 @@ function renderCard(s) {
   ].filter(Boolean).join(' ');
 
   const dragAttrs = isNew ? '' :
-    `draggable="true"
-     ondragstart="onDragStart(event,'${esc(id)}')"
+    `ondragstart="onDragStart(event,'${esc(id)}')"
      ondragover="onDragOver(event,'${esc(id)}')"
      ondragleave="onDragLeave(event,'${esc(id)}')"
      ondrop="onDrop(event,'${esc(id)}')"
@@ -424,7 +423,9 @@ function renderCard(s) {
   return `
     <div class="${classes}" data-id="${esc(id)}" id="card-${esc(id)}" ${dragAttrs}>
       <div class="src-group-header" onclick="toggleCollapse('${esc(id)}', event)">
-        ${isNew ? '' : `<span class="drag-handle" title="Drag to reorder" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()">⋮⋮</span>`}
+        ${isNew ? '' : `<span class="drag-handle" title="Drag to reorder"
+            onmousedown="armDrag('${esc(id)}', event)"
+            onclick="event.stopPropagation()">⋮⋮</span>`}
         <span class="collapse-arrow">▶</span>
         <span class="src-group-icon">${icon}</span>
         <div class="src-group-title-wrap">
@@ -737,6 +738,20 @@ async function testLink(id) {
 // ── Drag-and-drop reordering ─────────────────────────────────────────────
 let dragSrcId = null;
 
+// Only enable draggable on the card while the user holds the handle.
+// This prevents the browser from initiating a drag from any part of the card.
+function armDrag(id, ev) {
+  ev.stopPropagation();
+  const el = document.getElementById('card-' + id);
+  if (!el) return;
+  el.setAttribute('draggable', 'true');
+  const disarm = () => {
+    el.removeAttribute('draggable');
+    window.removeEventListener('mouseup', disarm, true);
+  };
+  window.addEventListener('mouseup', disarm, true);
+}
+
 function onDragStart(e, id) {
   const s = findSource(id);
   if (!s || s._draft) { e.preventDefault(); return; }
@@ -744,7 +759,15 @@ function onDragStart(e, id) {
   e.dataTransfer.effectAllowed = 'move';
   try { e.dataTransfer.setData('text/plain', id); } catch {}
   const el = document.getElementById('card-' + id);
-  if (el) setTimeout(() => el.classList.add('is-dragging'), 0);
+  if (el) {
+    // Use the header strip as a compact drag image instead of the full card
+    const header = el.querySelector('.src-group-header');
+    if (header && e.dataTransfer.setDragImage) {
+      const r = header.getBoundingClientRect();
+      e.dataTransfer.setDragImage(header, e.clientX - r.left, e.clientY - r.top);
+    }
+    setTimeout(() => el.classList.add('is-dragging'), 0);
+  }
 }
 
 function onDragOver(e, id) {
@@ -769,6 +792,7 @@ function onDragLeave(e, id) {
 function onDragEnd(e) {
   document.querySelectorAll('.src-group').forEach(el => {
     el.classList.remove('is-dragging', 'drop-before', 'drop-after');
+    el.removeAttribute('draggable');
   });
   dragSrcId = null;
 }
